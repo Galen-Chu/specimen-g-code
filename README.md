@@ -2,8 +2,8 @@
 
 > **"Data you can testify about."** · 「經得起檢驗的資料，才叫標本。」
 
-> 📐 **目前狀態：Phase 0——設計定案中。** 本 repo 目前是設計文件與套件骨架
-> （`docs/`），管線程式碼尚未開始；路線圖見下方。
+> 📐 **目前狀態：Phase 1 完成（2026-11-16）**——manifest／contract／catalog 核心、
+> golden 逐位元重現、CLI 與 CI 已上線；assay 協議與第一號真實標本（stock_1101）見路線圖。
 
 ---
 
@@ -64,30 +64,31 @@ inputs ──hash──► acquisition ──► preparation ──► staining 
 | **Leakage is a first-class enemy** | 四不變量是執行期的閘門，不是文件裡的建議 |
 | **Zero-dependency core, optional blades** | manifest／契約／登錄／assay 協議零相依；食譜按需選用 `[etl]`、`[ml]` |
 
-## 🚀 Quick Start · 快速開始（Phase 1 後可用）
+## 🚀 Quick Start · 快速開始
 
 ```bash
 git clone https://github.com/Galen-Chu/specimen-g-code.git
-cd specimen-g-code && pip install -e ".[dev,etl,ml]"
+cd specimen-g-code && pip install -e ".[dev]"   # 核心零相依；dev = pytest/mypy/ruff
 
-specimen prepare recipes/stock_1101.toml --out specimens/stock-1101/v1
-specimen verify  specimens/stock-1101/v1          # 重跑食譜，逐位元驗證
-specimen assay   specimens/stock-1101/v1 --protocol time-split-baseline
+PYTHONPATH=src python -m specimen prepare demo_vitals --seed 7 --raw tests/fixtures --out specimens/demo-vitals-s7
+PYTHONPATH=src python -m specimen verify  specimens/demo-vitals-s7 --raw tests/fixtures   # I4 逐位元驗證
+PYTHONPATH=src python -m specimen catalog specimens
+python -m pytest                                    # 28 tests, 含 golden 逐位元比對
 ```
 
-目前（Phase 0）以上為介面草案；實作與測試見路線圖。
+（Windows PowerShell：`$env:PYTHONPATH="src"`。`specimen prepare` 封存的標本是自描述的——manifest＋契約即可解讀，不需要本專案的程式碼。）
 
-## 📦 Module Map · 模組地圖（規劃）
+## 📦 Module Map · 模組地圖
 
-| Module | Focus |
-|--------|-------|
-| `specimen/manifest.py` | 標本登錄模型：inputs／recipe／outputs／splits／assays（DESIGN §2） |
-| `specimen/contract.py` | 表契約（schema 章節）：欄位、型別、範圍、粒度、鍵 |
-| `specimen/catalog.py` | 登錄冊：標本清單、版本、diff 報告 |
-| `specimen/invariants.py` | 四不變量的檢查器（I1–I4） |
-| `specimen/recipes/` | 製備食譜（第一號：`stock_1101`） |
-| `specimen/assay/` | 檢驗協議：時間切分、模型比較表、評估紀錄 |
-| `specimen/__main__.py` | CLI：prepare／verify／assay |
+| Module | Focus | 狀態 |
+|--------|-------|------|
+| `specimen/manifest.py` | 標本登錄：inputs／recipe／outputs／contracts／splits；決定論 TOML 序列化＋結構驗證 | ✅ |
+| `specimen/contract.py` | 表契約：型別、範圍、鍵唯一性（schema 章節） | ✅ |
+| `specimen/catalog.py` | prepare（封存）／verify（完整性＋契約＋I4 重現）／catalog（清單） | ✅ |
+| `specimen/recipes/` | 食譜註冊表＋`demo_vitals`（髒資料→雙粒度表的機械證明） | ✅（demo） |
+| `specimen/__main__.py` | CLI：prepare／verify／catalog | ✅ |
+| `specimen/assay/` | 檢驗協議：時間切分、I1/I2 執行期閘門、模型比較表 | Phase 2 |
+| `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW） | Phase 2 |
 
 ## 🔄 Related Projects · 關聯專案
 
@@ -100,12 +101,14 @@ specimen assay   specimens/stock-1101/v1 --protocol time-split-baseline
 
 ## 🗺️ Roadmap
 
-- [x] **Phase 0（本骨架）**：設計定案（DESIGN.md）、案例研究、manifest 草案、套件骨架
-- [ ] **Phase 1**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）
-- [ ] **Phase 2**：`stock_1101` 食譜完整落地——五階段、四不變量全綠；assay 協議（時間切分＋基準模型比較表）
+- [x] **Phase 0（2026-11-16）**：設計定案（DESIGN.md）、案例研究、manifest 草案、套件骨架
+- [x] **Phase 1（2026-11-16）**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）；demo_vitals 食譜證明全鏈；CLI＋CI；28 tests
+- [ ] **Phase 2**：`stock_1101` 食譜完整落地——五階段、四不變量全綠；assay 協議（時間切分＋I1/I2 閘門＋基準模型比較表）
 - [ ] **Phase 3**：staining 程式庫（欄位算術 DSL）＋特徵選取協議（相關分析／MI／RFE 的登記化）
 - [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群
 - [ ] **Phase 5**：漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）
+
+跨階段的具體工作項與工程債見 **[docs/BACKLOG.md](docs/BACKLOG.md)**（2026-11-16 盤點歸檔）。
 
 ## 🌐 Global Constraints
 

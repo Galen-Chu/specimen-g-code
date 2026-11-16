@@ -1,0 +1,56 @@
+[specimen]
+name = "demo-vitals-s7"
+version = 1
+seed = 7
+
+[recipe]
+module = "specimen.recipes.demo_vitals"
+steps = ["normalize_dates", "split_grains", "dedupe_keep_last", "sort_by_key"]
+
+[[recipe.inputs]]
+path = "vitals_raw.csv"
+sha256 = "970e6e08c792ee006b274366693f0e9c073f08f3941457b82602a7f0e463b194"
+
+[splits]
+method = "time-ordered"
+train_end = "2026-01-10"
+valid_end = "2026-01-20"
+
+[[outputs]]
+name = "daily"
+grain = "daily"
+file = "daily.csv"
+sha256 = "95989f98a3d9f016e27d58f0169092e8f21389b30133bf1831051b1d95e4a5a1"
+rows = 11
+
+[[outputs]]
+name = "quarterly"
+grain = "quarterly"
+file = "quarterly.csv"
+sha256 = "4ae1871f4358400074d281271d54e03634f6e430a5b53eba3f1eb252cb92b8d4"
+rows = 2
+
+[contracts.daily]
+grain = "daily"
+key = ["date", "symbol"]
+[contracts.daily.columns.close]
+type = "float"
+lo = 0.0
+hi = 1000.0
+[contracts.daily.columns.date]
+type = "date"
+[contracts.daily.columns.symbol]
+type = "string"
+[contracts.daily.columns.volume]
+type = "int"
+lo = 0.0
+
+[contracts.quarterly]
+grain = "quarterly"
+key = ["date", "symbol"]
+[contracts.quarterly.columns.date]
+type = "date"
+[contracts.quarterly.columns.note]
+type = "string"
+[contracts.quarterly.columns.symbol]
+type = "string"

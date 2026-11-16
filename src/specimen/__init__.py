@@ -1,16 +1,53 @@
 """Specimen G-Code: data you can testify about.
 
-Phase 0 — design finalized in docs/, no pipeline code yet. This package
-exists so the skeleton installs and the contracts below have a home:
-
-  acquisition -> preparation -> staining -> catalog -> assay
-
-with four invariants (docs/DESIGN.md section 4): time safety, target
-purity, grain separation, bit-reproducibility.
+Phase 1 (2026-11-16): the manifest / contract / catalog core with golden
+bit-reproducibility, zero-dependency, CSV tables. Pipeline stages:
+acquisition -> preparation -> staining -> catalog -> assay, held to the four
+invariants of docs/DESIGN.md section 4 (time safety, target purity, grain
+separation, bit-reproducibility).
 """
 
 from __future__ import annotations
 
-__version__ = "0.0.1"
+from .catalog import catalog, load_raw, prepare, verify
+from .contract import validate_all, validate_table
+from .hashing import sha256_bytes, sha256_file
+from .manifest import (
+    ColumnSpec,
+    Input,
+    Manifest,
+    Output,
+    Splits,
+    TableContract,
+    parse_manifest,
+    render_manifest,
+    validate_manifest,
+    write_manifest,
+)
+from .recipes import REGISTRY, RecipeSpec
 
-__all__ = ["__version__"]
+__version__ = "0.1.0"
+
+__all__ = [
+    "REGISTRY",
+    "ColumnSpec",
+    "Input",
+    "Manifest",
+    "Output",
+    "RecipeSpec",
+    "Splits",
+    "TableContract",
+    "__version__",
+    "catalog",
+    "load_raw",
+    "parse_manifest",
+    "prepare",
+    "render_manifest",
+    "sha256_bytes",
+    "sha256_file",
+    "validate_all",
+    "validate_manifest",
+    "validate_table",
+    "verify",
+    "write_manifest",
+]

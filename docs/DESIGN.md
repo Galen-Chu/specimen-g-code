@@ -1,8 +1,9 @@
 # 設計文件 Design
 
-> 狀態：Phase 0 草案（2026-11-16）。Phase 1 動工前定案；難以反悔的決定屆時以
-> 本文件章節更新並註明日期，或另立 ADR（若 Unbodysoma 式 ADR 文化在此專案
-> 落地——開放問題 6）。
+> 狀態：Phase 1 已實作（2026-11-16）——§2 的 manifest 格式即 `render_manifest` 的
+> 實際輸出，由 golden 標本（`tests/golden/demo-vitals-s7/`）逐位元釘死；`created`
+> 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。難以反悔的
+> 決定以本文件章節更新並註明日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
 
 ## 1. 目標與非目標
 

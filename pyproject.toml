@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "specimen-g-code"
-version = "0.0.1"
+version = "0.1.0"
 description = "Specimen preparation pipeline — raw data becomes evidence through registered, leakage-safe, bit-reproducible preparation"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ classifiers = [
 # recipes opt into the blades they need
 etl = ["pandas>=2"]
 ml = ["scikit-learn>=1.5"]
-dev = ["pytest>=8", "mypy>=1.11"]
+dev = ["pytest>=8", "mypy>=1.11", "ruff>=0.16"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -35,3 +35,10 @@ testpaths = ["tests"]
 [tool.mypy]
 strict = true
 files = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
