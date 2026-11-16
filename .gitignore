@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+# specimens are reproduced from (inputs + recipe + seed), never committed
+specimens/
+runs/
+data/raw/
