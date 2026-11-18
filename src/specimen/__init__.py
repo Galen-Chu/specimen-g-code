@@ -1,16 +1,18 @@
 """Specimen G-Code: data you can testify about.
 
 Phase 1 (2026-11-16): the manifest / contract / catalog core with golden
-bit-reproducibility, zero-dependency, CSV tables. Pipeline stages:
-acquisition -> preparation -> staining -> catalog -> assay, held to the four
-invariants of docs/DESIGN.md section 4 (time safety, target purity, grain
-separation, bit-reproducibility).
+bit-reproducibility, zero-dependency, CSV tables. v0.2.0 (2026-11-18): the
+manifest pins the recipe module's source hash, so verify distinguishes code
+drift from input drift. Pipeline stages: acquisition -> preparation ->
+staining -> catalog -> assay, held to the four invariants of
+docs/DESIGN.md section 4 (time safety, target purity, grain separation,
+bit-reproducibility).
 """
 
 from __future__ import annotations
 
 from .catalog import catalog, load_raw, prepare, verify
-from .contract import validate_all, validate_table
+from .contract import parse_date, validate_all, validate_table
 from .hashing import sha256_bytes, sha256_file
 from .manifest import (
     ColumnSpec,
@@ -26,7 +28,7 @@ from .manifest import (
 )
 from .recipes import REGISTRY, RecipeSpec
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "REGISTRY",
@@ -40,6 +42,7 @@ __all__ = [
     "__version__",
     "catalog",
     "load_raw",
+    "parse_date",
     "parse_manifest",
     "prepare",
     "render_manifest",

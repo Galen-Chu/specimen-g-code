@@ -22,10 +22,12 @@
 
 ## 4. 工程與基礎設施
 
-- **`py.typed`** 標記（mypy strict 已綠）。
+- ~~**`py.typed`** 標記~~ ✅ 完成（2026-11-18, v0.2.0；`[tool.setuptools.package-data]` 已配置，CI 打包 job 驗證）。
+- **食譜原始碼 hash 入冊** ✅ 完成（2026-11-18, v0.2.0）：manifest 增 `[recipe].source_sha256`；verify 先具名診斷「程式碼漂移／步驟不符／原料 hash 不符」才重跑 I4。
+- **驗證與基礎設施強化** ✅ 完成（2026-11-18）：rows 以 csv.reader 計數（引號內換行安全）；catalog 遇壞標本回報不 crash；manifest／integrity 報告旗標解耦；日期改嚴格日曆驗證（`2026-02-31` 不再通過）；CI 增 3.14 矩陣與打包安裝 job。
 - **parquet 判準**（DESIGN 開放問題 1）：欄數 > ~500 或型別保真需求出現時引入 `[etl]` 輸出選項；CSV＋golden 是 v0.x 基準。
 - **環境記錄 UI**：`prepare --annotate-environment`（決定論優先——環境是註記不是重現輸入，DESIGN §5）。
-- **v0.1.0 tag**：Phase 1 已完成、golden 釘死格式——可直接打 tag； Phase 2 前若有生態消費者（Unbodysoma M1）會需要穩定介面。
+- ~~**v0.1.0 tag**~~ ✅ v0.1.0 標記於 Phase 1 commit；v0.2.0（manifest 格式增 `source_sha256`）隨後——格式凍結自此起算。
 
 ## 5. 已回答的設計問題（歸檔）
 
@@ -35,3 +37,4 @@
 | manifest 的 `created`／environment 要自動記錄嗎？ | **不**——決定論優先：兩者皆 opt-in 註記，避免跨機／跨版本破壞逐位元重現（golden 測試把關） |
 | manifest 格式 | 已凍結為 `render_manifest` 的輸出（欄位序、LF、無時鐘），golden 標本 `tests/golden/demo-vitals-s7/` 逐位元釘死 |
 | 缺值行怎麼辦（demo 食譜的清潔規則） | 已宣告：季頻＝帶 note 的行；日頻缺 close＝不完整、丟棄；重複鍵保留最後——規則寫進食譜 docstring 與 manifest steps |
+| 食譜程式碼漂移如何偵測？ | manifest 記錄食譜模組原始碼 sha256（v0.2.0）；verify 比對，不符即「recipe code changed since sealing」——重現證明由**封存時的程式碼**出具，不是今天碰巧裝著的程式碼 |

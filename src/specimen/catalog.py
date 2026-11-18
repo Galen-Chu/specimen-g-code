@@ -9,11 +9,16 @@ A sealed specimen directory is
 (LF), computes their hashes and seals the manifest. ``verify`` checks a
 directory four ways: manifest validity, output integrity (hashes), contract
 conformance, and — when the raw inputs are supplied — bit-reproducibility
-(invariant I4). Nothing in this module consults the clock or the platform.
+(invariant I4). Before attesting I4 it compares the sealed recipe's code
+identity and input hashes, so drift is diagnosed precisely instead of
+surfacing as an anonymous "differs". Nothing in this module consults the
+clock or the platform.
 """
 
 from __future__ import annotations
 
+import csv
+import io
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -30,6 +35,11 @@ def load_raw(raw_dir: str | Path, filenames: tuple[str, ...]) -> dict[str, bytes
     return raw
 
 
+def _count_rows(text: str) -> int:
+    """Data-row count of a CSV body (quoted embedded newlines do not count as rows)."""
+    return max(sum(1 for _ in csv.reader(io.StringIO(text))) - 1, 0)
+
+
 def prepare(recipe_name: str, seed: int, raw: Mapping[str, bytes], out: str | Path, version: int = 1) -> Manifest:
     """Run a recipe and seal a specimen directory (idempotent, deterministic)."""
     spec = REGISTRY[recipe_name]
@@ -44,14 +54,13 @@ def prepare(recipe_name: str, seed: int, raw: Mapping[str, bytes], out: str | Pa
     for name in sorted(outputs):
         filename = f"{name}.csv"
         (out_dir / filename).write_text(outputs[name], encoding="utf-8", newline="\n")
-        rows = max(outputs[name].count("\n") - 1, 0)
         sealed.append(
             Output(
                 name=name,
                 grain=next(c.grain for c in spec.contracts if c.name == name),
                 file=filename,
                 sha256=sha256_bytes(outputs[name].encode("utf-8")),
-                rows=rows,
+                rows=_count_rows(outputs[name]),
             )
         )
     manifest = Manifest(
@@ -60,6 +69,7 @@ def prepare(recipe_name: str, seed: int, raw: Mapping[str, bytes], out: str | Pa
         seed=seed,
         recipe_module=spec.module,
         recipe_steps=spec.steps,
+        recipe_source_sha256=spec.source_sha256,
         inputs=tuple(Input(path=name, sha256=sha256_bytes(raw[name])) for name in spec.inputs),
         outputs=tuple(sealed),
         contracts=spec.contracts,
@@ -76,8 +86,12 @@ def load(specimen_dir: str | Path) -> Manifest:
     return parse_manifest((Path(specimen_dir) / "manifest.toml").read_text(encoding="utf-8"))
 
 
-def verify(specimen_dir: str | Path, raw: Mapping[str, bytes] | None = None) -> tuple[bool, list[str]]:
-    """Check a specimen; returns (ok, report lines). With ``raw``, also I4."""
+def verify(specimen_dir: str | Path, raw: Mapping[str, bytes] | str | Path | None = None) -> tuple[bool, list[str]]:
+    """Check a specimen; returns (ok, report lines).
+
+    ``raw`` supplies the original inputs for the I4 check — either the bytes
+    themselves or a directory holding the manifest's declared input files.
+    """
     directory = Path(specimen_dir)
     report: list[str] = []
     ok = True
@@ -90,18 +104,20 @@ def verify(specimen_dir: str | Path, raw: Mapping[str, bytes] | None = None) -> 
     report += [f"manifest: {p}" for p in problems] or ["manifest: ok"]
     ok = ok and not problems
 
+    integrity_ok = True
     for out in manifest.outputs:
         path = directory / out.file
         if not path.exists():
             report.append(f"integrity: {out.file} missing")
-            ok = False
+            integrity_ok = False
             continue
         digest = sha256_bytes(path.read_bytes())
         if digest != out.sha256:
             report.append(f"integrity: {out.file} hash mismatch (tampered or regenerated differently)")
-            ok = False
-    if ok:
+            integrity_ok = False
+    if integrity_ok:
         report.append("integrity: ok")
+    ok = ok and integrity_ok
 
     tables = {
         out.name: (directory / out.file).read_text(encoding="utf-8")
@@ -113,55 +129,78 @@ def verify(specimen_dir: str | Path, raw: Mapping[str, bytes] | None = None) -> 
     ok = ok and not contract_problems
 
     if raw is not None:
-        reproduce_problems = _reproduce(manifest, raw, directory)
-        report += [f"reproduce: {p}" for p in reproduce_problems] or ["reproduce: ok (byte-identical)"]
-        ok = ok and not reproduce_problems
+        raw_bytes: Mapping[str, bytes] | None
+        if isinstance(raw, (str, Path)):
+            try:
+                raw_bytes = load_raw(raw, tuple(i.path for i in manifest.inputs))
+            except OSError as error:
+                raw_bytes = None
+                report.append(f"reproduce: raw inputs unreadable ({error})")
+                ok = False
+        else:
+            raw_bytes = raw
+        if raw_bytes is not None:
+            reproduce_problems = _reproduce(manifest, raw_bytes, directory)
+            report += [f"reproduce: {p}" for p in reproduce_problems] or ["reproduce: ok (byte-identical)"]
+            ok = ok and not reproduce_problems
     return ok, report
 
 
 def _reproduce(manifest: Manifest, raw: Mapping[str, bytes], directory: Path) -> list[str]:
-    """I4: rerun the recorded recipe and compare every output byte for byte."""
-    from .recipes import REGISTRY  # module recorded in the manifest is the lookup key
+    """I4: rerun the recorded recipe and compare every output byte for byte.
 
+    Identity first: the registered recipe's steps and source hash must match
+    what was sealed, and every raw input must match its recorded hash. Only
+    then is a fresh run meaningful — otherwise "differs" would misreport code
+    or input drift as output tampering.
+    """
     spec = next((s for s in REGISTRY.values() if s.module == manifest.recipe_module), None)
     if spec is None:
         return [f"recipe module {manifest.recipe_module!r} is not registered"]
     missing = [name for name in spec.inputs if name not in raw]
     if missing:
         return [f"raw inputs missing: {missing}"]
-    fresh = dict(spec.run(manifest.seed, {k: raw[k] for k in spec.inputs}))
-    problems = []
+
+    problems: list[str] = []
+    if spec.steps != manifest.recipe_steps:
+        problems.append(f"recipe steps differ from the sealed record: {manifest.recipe_steps} vs {spec.steps}")
+    if spec.source_sha256 != manifest.recipe_source_sha256:
+        problems.append("recipe code changed since sealing (source sha256 mismatch); seal a new version")
+    for inp in manifest.inputs:
+        if sha256_bytes(raw[inp.path]) != inp.sha256:
+            problems.append(f"input {inp.path} does not match the sealed sha256")
+    if problems:
+        return problems
+
+    fresh = spec.run(manifest.seed, {k: raw[k] for k in spec.inputs})
     for out in manifest.outputs:
-        current = (directory / out.file).read_text(encoding="utf-8")
-        if fresh.get(out.name) != current:
+        path = directory / out.file
+        if not path.exists():
+            continue  # already reported by the integrity check
+        if fresh.get(out.name) != path.read_text(encoding="utf-8"):
             problems.append(f"{out.file} differs from a fresh run")
-    expected_manifest = Manifest(
-        name=manifest.name,
-        version=manifest.version,
-        seed=manifest.seed,
-        recipe_module=manifest.recipe_module,
-        recipe_steps=manifest.recipe_steps,
-        inputs=manifest.inputs,
-        outputs=manifest.outputs,
-        contracts=manifest.contracts,
-        splits=manifest.splits,
-    )
-    if render_differs(expected_manifest, manifest):
-        problems.append("manifest fields differ from a fresh seal")
     return problems
 
 
-def render_differs(a: Manifest, b: Manifest) -> bool:
-    from .manifest import render_manifest
-
-    return render_manifest(a) != render_manifest(b)
-
-
 def catalog(root: str | Path) -> list[dict[str, object]]:
-    """List sealed specimens under a root directory (name, version, outputs)."""
-    entries = []
+    """List sealed specimens under a root directory (name, version, outputs).
+
+    An unreadable manifest yields an entry with an ``error`` key instead of
+    crashing the listing — a bad specimen is evidence, not an exception.
+    """
+    entries: list[dict[str, object]] = []
     for manifest_path in sorted(Path(root).glob("*/manifest.toml")):
-        manifest = parse_manifest(manifest_path.read_text(encoding="utf-8"))
+        try:
+            manifest = parse_manifest(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, KeyError, ValueError) as error:
+            entries.append(
+                {
+                    "name": manifest_path.parent.name,
+                    "error": f"unreadable manifest ({error})",
+                    "dir": manifest_path.parent.name,
+                }
+            )
+            continue
         entries.append(
             {
                 "name": manifest.name,

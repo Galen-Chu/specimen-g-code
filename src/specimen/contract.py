@@ -12,10 +12,26 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Mapping, Sequence
+from datetime import date
 
 from .manifest import TableContract
 
 _DATE_LENGTH = 10
+
+
+def parse_date(value: str) -> date | None:
+    """Strict ``YYYY-MM-DD`` calendar date; None means the value is not one.
+
+    The structural check (length and dash placement) excludes every other
+    ISO-8601 spelling before ``date.fromisoformat`` settles calendar validity,
+    so 2026-02-31 is rejected while 2026-02-28 passes.
+    """
+    if len(value) != _DATE_LENGTH or value[4] != "-" or value[7] != "-":
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _parse_typed(value: str, type_name: str) -> float | None:
@@ -27,12 +43,10 @@ def _parse_typed(value: str, type_name: str) -> float | None:
             parsed = float(value)
             return parsed if parsed.is_integer() else None
         if type_name == "date":
-            if len(value) != _DATE_LENGTH or value[4] != "-" or value[7] != "-":
+            parsed_date = parse_date(value)
+            if parsed_date is None:
                 return None
-            year, month, day = int(value[:4]), int(value[5:7]), int(value[8:10])
-            if not 1 <= month <= 12 or not 1 <= day <= 31:
-                return None
-            return float(year * 10000 + month * 100 + day)
+            return float(parsed_date.year * 10000 + parsed_date.month * 100 + parsed_date.day)
     except ValueError:
         return None
     return None

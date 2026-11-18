@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "specimen-g-code"
-version = "0.1.0"
+version = "0.2.0"
 description = "Specimen preparation pipeline — raw data becomes evidence through registered, leakage-safe, bit-reproducible preparation"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,6 +15,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
 
@@ -27,6 +28,9 @@ dev = ["pytest>=8", "mypy>=1.11", "ruff>=0.16"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+specimen = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

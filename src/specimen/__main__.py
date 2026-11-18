@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .catalog import catalog, load, load_raw, prepare, verify
+from .catalog import catalog, load_raw, prepare, verify
 from .recipes import REGISTRY
 
 
@@ -37,16 +37,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"sealed {args.out}  ({manifest.name} v{manifest.version}, {len(manifest.outputs)} outputs)")
         return 0
     if args.command == "verify":
-        raw = None
-        if args.raw:
-            manifest = load(args.specimen)
-            raw = load_raw(args.raw, tuple(i.path for i in manifest.inputs))
-        ok, report = verify(args.specimen, raw)
+        ok, report = verify(args.specimen, args.raw)
         for line in report:
             print(line)
         print("verify: PASS" if ok else "verify: FAIL")
         return 0 if ok else 1
     for entry in catalog(args.root):
+        if "error" in entry:
+            print(f"{str(entry['name']):24} {entry['error']}")
+            continue
         print(f"{entry['name']:24} v{entry['version']}  seed {entry['seed']}  outputs: {', '.join(entry['outputs'])}")  # type: ignore[arg-type]
     return 0
 

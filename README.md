@@ -4,6 +4,7 @@
 
 > 📐 **目前狀態：Phase 1 完成（2026-11-16）**——manifest／contract／catalog 核心、
 > golden 逐位元重現、CLI 與 CI 已上線；assay 協議與第一號真實標本（stock_1101）見路線圖。
+> 🧪 v0.2.0（2026-11-18）：食譜原始碼 hash 入冊——`verify` 能具名識破「封存後程式碼漂移」。
 
 ---
 
@@ -50,7 +51,7 @@ inputs ──hash──► acquisition ──► preparation ──► staining 
 | I1 | **時間安全** time safety | 切分一律按時間序；任何填充／標準化只在 train 段 fit，絕不看未來 |
 | I2 | **目標純淨** target purity | 特徵不得含與目標同期且取得時間因果上不可得的欄位；目標的衍生欄一律排除 |
 | I3 | **粒度分離** grain separation | 日頻與季頻等不同粒度分表存放；合併一律 as-of join（取不晚於當時點的最近值） |
-| I4 | **逐位元重現** bit-reproducibility | （原料 hash＋食譜＋種子）→ 相同輸出，golden 測試釘死 |
+| I4 | **逐位元重現** bit-reproducibility | （原料 hash＋食譜＋種子＋食譜原始碼 hash）→ 相同輸出，golden 測試釘死；程式碼漂移會被 verify 具名拒絕 |
 
 四不變量來自真實案例的方法學缺口分析：[docs/CASE-STUDY-1101TW.md](docs/CASE-STUDY-1101TW.md)。
 
@@ -73,7 +74,7 @@ cd specimen-g-code && pip install -e ".[dev]"   # 核心零相依；dev = pytest
 PYTHONPATH=src python -m specimen prepare demo_vitals --seed 7 --raw tests/fixtures --out specimens/demo-vitals-s7
 PYTHONPATH=src python -m specimen verify  specimens/demo-vitals-s7 --raw tests/fixtures   # I4 逐位元驗證
 PYTHONPATH=src python -m specimen catalog specimens
-python -m pytest                                    # 28 tests, 含 golden 逐位元比對
+python -m pytest                                    # 36 tests, 含 golden 逐位元比對
 ```
 
 （Windows PowerShell：`$env:PYTHONPATH="src"`。`specimen prepare` 封存的標本是自描述的——manifest＋契約即可解讀，不需要本專案的程式碼。）
@@ -82,7 +83,7 @@ python -m pytest                                    # 28 tests, 含 golden 逐�
 
 | Module | Focus | 狀態 |
 |--------|-------|------|
-| `specimen/manifest.py` | 標本登錄：inputs／recipe／outputs／contracts／splits；決定論 TOML 序列化＋結構驗證 | ✅ |
+| `specimen/manifest.py` | 標本登錄：inputs／recipe（含原始碼 hash）／outputs／contracts／splits；決定論 TOML 序列化＋結構驗證 | ✅ |
 | `specimen/contract.py` | 表契約：型別、範圍、鍵唯一性（schema 章節） | ✅ |
 | `specimen/catalog.py` | prepare（封存）／verify（完整性＋契約＋I4 重現）／catalog（清單） | ✅ |
 | `specimen/recipes/` | 食譜註冊表＋`demo_vitals`（髒資料→雙粒度表的機械證明） | ✅（demo） |

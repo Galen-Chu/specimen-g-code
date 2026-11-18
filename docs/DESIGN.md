@@ -2,8 +2,10 @@
 
 > 狀態：Phase 1 已實作（2026-11-16）——§2 的 manifest 格式即 `render_manifest` 的
 > 實際輸出，由 golden 標本（`tests/golden/demo-vitals-s7/`）逐位元釘死；`created`
-> 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。難以反悔的
-> 決定以本文件章節更新並註明日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
+> 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。v0.2.0
+> （2026-11-18）：manifest 增 `[recipe].source_sha256`（食譜原始碼身分），verify
+> 對程式碼漂移拒絕出具 I4 證明。難以反悔的決定以本文件章節更新並註明日期；
+> 工作項清單見 [BACKLOG.md](BACKLOG.md)。
 
 ## 1. 目標與非目標
 
@@ -39,6 +41,7 @@ seed = 0
 [recipe]                       # 重跑此清單應逐位元重建 outputs
 module = "specimen.recipes.stock_1101"
 steps = ["flatten", "split_grains", "normalize_dates", "dedupe", "asof_align"]
+source_sha256 = "…"            # 食譜原始碼身分；verify 據此識破程式碼漂移（v0.2.0）
 inputs = [
   { path = "data/raw/1101.json", sha256 = "…" },
 ]
@@ -78,8 +81,9 @@ metrics = { roc_auc = 0.0, pr_auc = 0.0 }   # 由 assay runner 寫入
 規則：
 
 - **不可變**：`catalog` 封存後任何檔案不得改動；新版本＝新目錄＋diff 報告。
-- **血緣完備**：原料帶 hash、輸出帶 hash、食譜帶模組與步驟清單——重現不需要
-  「當時的環境」以外的任何記憶（環境釘在 Phase 1 的鎖定檔）。
+- **血緣完備**：原料帶 hash、輸出帶 hash、食譜帶模組、步驟清單與原始碼 hash
+  （v0.2.0）——重現的依據只剩「當時的程式碼與環境」本身，而程式碼漂移由
+  `verify` 對照 source_sha256 識破（見 §5）。
 - **切分屬於標本**：train/valid/test 邊界登記在 manifest，所有 assay 共用，
   杜絕「每個實驗自己切、結果不可比」。
 - 表格式 v0.1 用 CSV（零相依、hash 友善）；parquet 列為開放問題 1。
@@ -112,8 +116,10 @@ metrics = { roc_auc = 0.0, pr_auc = 0.0 }   # 由 assay runner 寫入
   純 stdlib。食譜按需選用 `[etl]`（pandas）、`[ml]`（scikit-learn）。
 - **種子決定一切**：同一（原料 hash＋食譜＋種子）必須產出逐位元相同的標本——
   浮點格式化沿用 sanctuary 的定位輸出策略；CSV 以 LF 寫出。
-- **環境鎖定**（Phase 1）：pandas／sklearn 版本寫進 manifest 的環境節——
-  逐位元重現在 Python 生態是版本敏感的，誠實面對比假裝不敏感好。
+- **環境是註記，不是輸入**：`created`／`environment` 皆 opt-in——自動記錄會破壞
+  跨機逐位元重現。程式碼身分釘在食譜層（2026-11-18, v0.2.0）：manifest 記錄
+  食譜模組原始碼的 sha256，`verify` 比對不符即判定「程式碼已漂移」，拒絕出具
+  逐位元重現證明——逐位元重現在 Python 生態是版本敏感的，誠實面對比假裝不敏感好。
 
 ## 6. 與生態系的介面
 

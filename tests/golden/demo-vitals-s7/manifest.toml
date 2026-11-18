@@ -6,6 +6,7 @@ seed = 7
 [recipe]
 module = "specimen.recipes.demo_vitals"
 steps = ["normalize_dates", "split_grains", "dedupe_keep_last", "sort_by_key"]
+source_sha256 = "fd6c093c27e90df23dda3490043eada417d44f42ea5d968581f571dff4409860"
 
 [[recipe.inputs]]
 path = "vitals_raw.csv"

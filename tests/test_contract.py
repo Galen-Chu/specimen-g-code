@@ -42,6 +42,13 @@ def test_type_violations_are_reported() -> None:
     assert any("not a valid float" in p for p in problems)
 
 
+def test_impossible_calendar_dates_are_rejected() -> None:
+    text = "date,symbol,close\n2026-02-31,ACME,101.5\n2026-02-28,GLOB,55.0\n"
+    problems = validate_table(CONTRACT, text)
+    assert any("2026-02-31" in p and "not a valid date" in p for p in problems)
+    assert not any("2026-02-28" in p for p in problems)
+
+
 def test_missing_column_short_circuits() -> None:
     text = "date,symbol\n2026-01-02,ACME\n"
     assert any("missing columns" in p for p in validate_table(CONTRACT, text))

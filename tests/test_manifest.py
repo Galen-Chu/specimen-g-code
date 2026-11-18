@@ -32,6 +32,7 @@ def demo_manifest() -> Manifest:
         seed=7,
         recipe_module="specimen.recipes.demo_vitals",
         recipe_steps=("normalize_dates", "split_grains", "dedupe_keep_last", "sort_by_key"),
+        recipe_source_sha256="c" * 64,
         inputs=(Input(path="vitals_raw.csv", sha256="a" * 64),),
         outputs=(Output(name="daily", grain="daily", file="daily.csv", sha256="b" * 64, rows=11),),
         contracts=(contract,),
@@ -74,3 +75,6 @@ def test_validation_catches_structural_invariants() -> None:
 
     bad_sha = Manifest(**{**good.__dict__, "outputs": (Output("daily", "daily", "daily.csv", "short", 11),)})
     assert any("sha256" in p for p in validate_manifest(bad_sha))
+
+    bad_code = Manifest(**{**good.__dict__, "recipe_source_sha256": "short"})
+    assert any("source_sha256" in p for p in validate_manifest(bad_code))

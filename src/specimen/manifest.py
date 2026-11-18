@@ -12,6 +12,11 @@ clock or the platform — ``prepare`` twice from the same inputs and seed
 produces byte-identical manifests on any machine. The ``created`` and
 ``environment`` fields are opt-in annotations exactly because they would
 break that property.
+
+Code identity (v0.2.0): the manifest pins the recipe module's source file
+hash (``source_sha256``), so ``verify`` can tell "the inputs changed" from
+"the recipe code drifted since sealing" — reproduction is attested by the
+recorded code, not by whatever happens to be installed today.
 """
 
 from __future__ import annotations
@@ -73,6 +78,7 @@ class Manifest:
     seed: int
     recipe_module: str
     recipe_steps: tuple[str, ...]
+    recipe_source_sha256: str  # sha256 of the recipe module's source file at seal time
     inputs: tuple[Input, ...]
     outputs: tuple[Output, ...]
     contracts: tuple[TableContract, ...]
@@ -109,6 +115,7 @@ def render_manifest(m: Manifest) -> str:
         "[recipe]",
         f"module = {_q(m.recipe_module)}",
         "steps = [" + ", ".join(_q(s) for s in m.recipe_steps) + "]",
+        f"source_sha256 = {_q(m.recipe_source_sha256)}",
         "",
     ]
     for inp in m.inputs:
@@ -156,6 +163,8 @@ def validate_manifest(m: Manifest) -> list[str]:
         problems.append("specimen: name must be non-empty and version >= 1")
     if not m.recipe_module or not m.recipe_steps:
         problems.append("recipe: module and steps are required")
+    if len(m.recipe_source_sha256) != 64:
+        problems.append("recipe: source_sha256 must be 64 hex characters")
     if not m.inputs:
         problems.append("recipe: at least one input with sha256 is required")
     if any(len(i.sha256) != 64 for i in m.inputs):
@@ -214,6 +223,7 @@ def parse_manifest(text: str) -> Manifest:
         seed=specimen["seed"],
         recipe_module=recipe["module"],
         recipe_steps=tuple(recipe["steps"]),
+        recipe_source_sha256=recipe["source_sha256"],
         inputs=inputs,
         outputs=outputs,
         contracts=contracts,
