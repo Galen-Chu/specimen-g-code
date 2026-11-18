@@ -1,9 +1,12 @@
-"""First real specimen: 1101.TW (台泥) daily prices from TWSE open data.
+"""First real specimen: 1101.TW (台泥) — daily prices plus a quarterly grain.
 
-Raw is the verbatim monthly ``rwd/zh/afterTrading/STOCK_DAY`` JSON fetched
-by ``scripts/acquire_1101.py`` (ROC-era dates, comma-grouped numbers,
-``--`` on no-trade days). Every cleaning rule is declared here and recorded
-in the manifest steps - none is implicit:
+Daily raw is the verbatim monthly ``rwd/zh/afterTrading/STOCK_DAY`` JSON
+(ROC-era dates, comma-grouped numbers, ``--`` on no-trade days). Quarterly
+raw is the Yahoo Finance statement backfill (declared third-party; the
+official MOPS snapshots migrated to openapi.twse.com.tw are snapshot-only,
+so history 2025Q3..2026Q3 comes from yfinance and the official 115Q3 file
+is kept alongside as provenance). Every cleaning rule is declared here and
+recorded in the manifest steps - none is implicit:
 
 - parse_months: months whose ``stat`` is not "OK" are skipped.
 - normalize_roc_dates: "115/09/01" -> "2026-09-01" (ROC + 1911).
@@ -17,8 +20,20 @@ in the manifest steps - none is implicit:
   later is at least 10% above today's close (as-of = last close at or
   before date+90d, drawn from this table's own series). Rows without a
   full 90-day lookahead are dropped - they cannot be labeled honestly.
+- parse_quarterly_statements: the yfinance quarterly CSVs (per-quarter
+  TWD) are read; quarters missing any of revenue/net_income/total_assets
+  are dropped (2025Q1/Q2 have none on Yahoo).
+- harmonize_to_twd_thousands: yf values are divided by 1000 into TWD
+  thousands - cross-validated against the official 115Q3 snapshot on the
+  overlap quarter: revenue (yf 2026 Q1+Q2+Q3 sum) and total_assets match
+  the official YTD/balance values exactly. yf net_income follows a
+  narrower attribution than the official 本期淨利 and is kept as-served.
+- sort_quarterly_by_key: quarterly rows sorted by (date, symbol), where
+  date is the quarter-end day.
 
-Splits (time-ordered, registered in the manifest): train through
+The as-of join of quarterly features into the daily grain (lag >= 90
+days) is a staining step - Phase 3 opens with exactly that registered
+step. Splits (time-ordered, registered in the manifest): train through
 2025-12-31 (both classes present: the 2025H2 advance supplies positives),
 valid 2026-01-01..2026-06-30, test 2026-07-01 onward - the most recent
 fully-labelable window, which also carries both classes. The seed is
@@ -45,12 +60,19 @@ STEPS = (
     "dedupe_keep_last",
     "sort_by_key",
     "label_forward_return_90d",
+    "parse_quarterly_statements",
+    "harmonize_to_twd_thousands",
+    "sort_quarterly_by_key",
 )
-INPUTS = tuple(
+MONTHLY_INPUTS = tuple(
     f"twse_stock_day_{year}{month:02d}.json"
     for year in range(2024, 2027)
     for month in range(1, 13)
     if f"{year}{month:02d}" <= "202610"
+)
+INPUTS = MONTHLY_INPUTS + (
+    "quarterly/yf_1101_quarterly_income.csv",
+    "quarterly/yf_1101_quarterly_balance.csv",
 )
 CONTRACTS = (
     TableContract(
@@ -70,13 +92,32 @@ CONTRACTS = (
             ColumnSpec("label", "int", lo=0.0, hi=1.0, availability_lag_days=90.0),
         ),
     ),
+    TableContract(
+        name="quarterly",
+        grain="quarterly",
+        key=("date", "symbol"),
+        columns=(
+            ColumnSpec("date", "date"),
+            ColumnSpec("symbol", "string"),
+            ColumnSpec("revenue", "float", lo=0.0, availability_lag_days=90.0),
+            ColumnSpec("net_income", "float", availability_lag_days=90.0),  # can be negative; yf attribution
+            ColumnSpec("total_assets", "float", lo=0.0, availability_lag_days=90.0),
+        ),
+    ),
 )
 SPLITS = Splits(method="time-ordered", train_end="2025-12-31", valid_end="2026-06-30")
 
 FIELDS = (1, 2, 3, 4, 5, 6, 8)  # volume, value, open, high, low, close, transactions
 HEADER = ("date", "symbol", "open", "high", "low", "close", "volume", "value", "transactions", "label")
+QUARTERLY_HEADER = ("date", "symbol", "revenue", "net_income", "total_assets")
 FORWARD_DAYS = 90
 THRESHOLD = 0.10
+
+YF_FIELDS = {
+    "quarterly/yf_1101_quarterly_income.csv": ("revenue", "net_income"),
+    "quarterly/yf_1101_quarterly_balance.csv": ("total_assets",),
+}
+YF_LABELS = {"revenue": "Total Revenue", "net_income": "Net Income", "total_assets": "Total Assets"}
 
 
 def _iso(roc: str) -> str:
@@ -84,9 +125,42 @@ def _iso(roc: str) -> str:
     return f"{int(year) + 1911:04d}-{int(month):02d}-{int(day):02d}"
 
 
+def _thousands(value: float) -> str:
+    """harmonize_to_twd_thousands: TWD -> TWD thousands, formatted deterministically."""
+    scaled = value / 1000.0
+    return str(int(scaled)) if scaled.is_integer() else repr(scaled)
+
+
+def _quarterly_rows(inputs: Mapping[str, bytes]) -> list[dict[str, str]]:
+    """parse_quarterly_statements: quarters missing any declared field are dropped."""
+    collected: dict[str, dict[str, float]] = {}
+    for filename, names in YF_FIELDS.items():
+        reader = csv.DictReader(io.StringIO(inputs[filename].decode("utf-8")))
+        index = reader.fieldnames[0] if reader.fieldnames else ""
+        rows = {row[index]: row for row in reader}
+        for name in names:
+            for date_str, value in rows.get(YF_LABELS[name], {}).items():
+                if date_str == index or value in ("", "nan", "NaN"):
+                    continue
+                collected.setdefault(date_str, {})[name] = float(value)
+    table = []
+    for date_str in sorted(collected):  # sort_quarterly_by_key
+        fields = collected[date_str]
+        if set(fields) != set(YF_LABELS):
+            continue  # declared: no honest value exists for this quarter
+        table.append(
+            {
+                "date": date_str,
+                "symbol": "1101",
+                **{name: _thousands(fields[name]) for name in ("revenue", "net_income", "total_assets")},
+            }
+        )
+    return table
+
+
 def run(seed: int, inputs: Mapping[str, bytes]) -> dict[str, str]:
     rows: list[dict[str, str]] = []
-    for name in INPUTS:  # parse_months: INPUTS order is chronological
+    for name in MONTHLY_INPUTS:  # parse_months: chronological order
         month = json.loads(inputs[name])
         if month.get("stat") != "OK":
             continue
@@ -126,9 +200,16 @@ def run(seed: int, inputs: Mapping[str, bytes]) -> dict[str, str]:
         label = 1 if future / close - 1.0 >= THRESHOLD else 0
         labeled.append({**row, "label": str(label)})
 
+    return {
+        "daily": _write_csv(HEADER, labeled),
+        "quarterly": _write_csv(QUARTERLY_HEADER, _quarterly_rows(inputs)),
+    }
+
+
+def _write_csv(header: tuple[str, ...], rows: list[dict[str, str]]) -> str:
     buffer = io.StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=HEADER, lineterminator="\n")
+    writer = csv.DictWriter(buffer, fieldnames=header, lineterminator="\n")
     writer.writeheader()
-    for row in labeled:
-        writer.writerow({name: row[name] for name in HEADER})
-    return {"daily": buffer.getvalue()}
+    for row in rows:
+        writer.writerow({name: row[name] for name in header})
+    return buffer.getvalue()

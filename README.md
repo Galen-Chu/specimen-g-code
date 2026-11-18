@@ -92,7 +92,7 @@ python -m pytest                                    # 62 tests, 含兩個 golden
 | `specimen/__main__.py` | CLI：prepare／verify／catalog | ✅ |
 | `specimen/invariants.py` | 執行期閘門：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1）、`check_target_purity`（I2／availability 必須宣告）、`check_grain_separation`（I3 結構面） | ✅（2026-11-18） |
 | `specimen/assay.py` | 檢驗協議（`PROTOCOLS` 登記制）：入口閘門 I2→I3→完整性→〔協議內〕契約→數值／二元→I1；`time-split-baseline`＝constant／logistic／decision_tree／knn＋ROC-AUC／PR-AUC；`[[assays]]` 只加不寫；[ml] 刀片，核心零相依 | ✅（2026-11-18） |
-| `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW）：宣告式清潔規則（民國日期、千分位、無成交日、90 天前瞻缺列丟棄）、availability 全宣告、golden 釘死、assay 過門 | ✅（2026-11-18） |
+| `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW）雙粒度：daily（TWSE 日頻＋90 天前瞻目標）＋quarterly（官方快照血緣＋yfinance 歷史回補，單位諧調以重疊季交叉驗證釘死）；宣告式清潔規則、availability 全宣告、golden 釘死、assay 過門 | ✅（2026-11-18） |
 | `scripts/acquire_1101.py` | 原料擷取：TWSE 開放資料逐月重爬 1101.TW 日頻（原樣入 `data/raw/`，僅此階段碰網路） | ✅（2026-11-18） |
 | `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW） | Phase 2 |
 
@@ -109,7 +109,7 @@ python -m pytest                                    # 62 tests, 含兩個 golden
 
 - [x] **Phase 0（2026-11-16）**：設計定案（DESIGN.md）、案例研究、manifest 草案、套件骨架
 - [x] **Phase 1（2026-11-16）**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）；demo_vitals 食譜證明全鏈；CLI＋CI；28 tests
-- [ ] **Phase 2**（收尾中）：`stock_1101` 食譜**日頻部分已落地**（2026-11-18，SOP 六項驗收全綠）——TWSE 開放資料重爬、宣告式清潔規則、90 天前瞻目標、golden 釘死、assay 基準比較表。**剩餘**：MOPS 季報 opendata 端點可達後擴充季頻表（as-of 對齊示範 I3 的操作面）
+- [ ] **Phase 2**（**完成**，2026-11-18）：`stock_1101` 食譜雙粒度落地——daily（TWSE 開放資料重爬、宣告式清潔規則、90 天前瞻目標）＋quarterly（官方 MOPS 快照遷移至 openapi.twse.com.tw 的 t187apXX 端點作血緣與向前累積；歷史季 2025Q3–2026Q3 以 yfinance 宣告式回補，重疊季交叉驗證精確命中）；assay 協議（時間切分＋四閘門＋標準化基準比較表）。**Phase 3 開場**：季→日 as-of 對齊 staining 步驟
 - [ ] **Phase 3**：staining 程式庫（欄位算術 DSL）＋特徵選取協議（相關分析／MI／RFE 的登記化）
 - [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群
 - [ ] **Phase 5**：漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）

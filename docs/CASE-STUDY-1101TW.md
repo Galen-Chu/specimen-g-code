@@ -1,8 +1,9 @@
 # 案例研究：1101.TW —— 第一號標本
 
-> 狀態：分析完成（2026-11-16）；食譜**日頻部分已落地**（2026-11-18，`specimen/recipes/stock_1101.py`
-> ＋golden `tests/golden/stock-1101-s0/`；原料改為 TWSE 開放資料重爬）。季頻財報部分
-> 待 MOPS opendata 端點可達後擴充。
+> 狀態：分析完成（2026-11-16）；食譜**雙粒度已落地**（2026-11-18，`specimen/recipes/stock_1101.py`
+> ＋golden `tests/golden/stock-1101-s0/`）：daily＝TWSE 開放資料重爬＋90 天前瞻目標；
+> quarterly＝官方 MOPS 快照（已遷移至 openapi.twse.com.tw）作血緣與向前累積＋yfinance
+> 歷史回補（2025Q3–2026Q3，重疊季交叉驗證精確命中）。as-of 對齊為 Phase 3 staining 開場。
 > 來源：[ZZZPython-data-engineer](https://github.com/Galen-Chu/ZZZPython-data-engineer)
 > （鷹翔有限公司 Stark Tech——Python 數據工程師評測；評測者：商研院 朱靖文）。
 > 本文件把該評測的資料與流程拆解成標本語言，並列出四不變量各自對應的

@@ -5,8 +5,8 @@ seed = 0
 
 [recipe]
 module = "specimen.recipes.stock_1101"
-steps = ["parse_months", "normalize_roc_dates", "strip_thousands", "drop_incomplete", "dedupe_keep_last", "sort_by_key", "label_forward_return_90d"]
-source_sha256 = "cf8fe39a348913e170c9beafc1da5600d97bd958fc60ae9bc37bfceaaae75fab"
+steps = ["parse_months", "normalize_roc_dates", "strip_thousands", "drop_incomplete", "dedupe_keep_last", "sort_by_key", "label_forward_return_90d", "parse_quarterly_statements", "harmonize_to_twd_thousands", "sort_quarterly_by_key"]
+source_sha256 = "7f3badf745140d49e3b4d7ffb48271966e4ec8b4ae98a627e77c716a4e9c10aa"
 
 [[recipe.inputs]]
 path = "twse_stock_day_202401.json"
@@ -144,6 +144,14 @@ sha256 = "940808b14a658103aacd5a7b430c65406fcad646e25e420a688984bdb8eb2ab0"
 path = "twse_stock_day_202610.json"
 sha256 = "84cce8cb0059a2207c6ffb39ae837b85663eda8f634ac503ff2f23d2f6eeb097"
 
+[[recipe.inputs]]
+path = "quarterly/yf_1101_quarterly_income.csv"
+sha256 = "94bf665e3dbcbcdb8d94cb91a0cdae995b855176322ddc929a13a2a70d2940cf"
+
+[[recipe.inputs]]
+path = "quarterly/yf_1101_quarterly_balance.csv"
+sha256 = "c508e3cb3528b4478f9f73ddfb8196705f4540138d14c07590c15a68263cdfa2"
+
 [splits]
 method = "time-ordered"
 train_end = "2025-12-31"
@@ -155,6 +163,13 @@ grain = "daily"
 file = "daily.csv"
 sha256 = "acf0385f749f8b9f05524def2a5d728516de3f977cde52cb22b197e9069bd7a3"
 rows = 622
+
+[[outputs]]
+name = "quarterly"
+grain = "quarterly"
+file = "quarterly.csv"
+sha256 = "5591029bbbfedc78fb0a86a648b642ae31bee95a8e3fa189f5ceccaf5ed9d47c"
+rows = 5
 
 [contracts.daily]
 grain = "daily"
@@ -196,3 +211,22 @@ availability_lag_days = 0.0
 type = "int"
 lo = 0.0
 availability_lag_days = 0.0
+
+[contracts.quarterly]
+grain = "quarterly"
+key = ["date", "symbol"]
+[contracts.quarterly.columns.date]
+type = "date"
+[contracts.quarterly.columns.net_income]
+type = "float"
+availability_lag_days = 90.0
+[contracts.quarterly.columns.revenue]
+type = "float"
+lo = 0.0
+availability_lag_days = 90.0
+[contracts.quarterly.columns.symbol]
+type = "string"
+[contracts.quarterly.columns.total_assets]
+type = "float"
+lo = 0.0
+availability_lag_days = 90.0
