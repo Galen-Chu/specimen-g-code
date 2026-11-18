@@ -62,9 +62,15 @@ PROTOCOLS: dict[str, ProtocolFn] = {}  # the registry every new protocol joins
 
 
 def _model_specs(seed: int, train_size: int) -> list[ModelSpec]:
+    """Baselines. Scale-sensitive models (logistic, knn) standardize inside a
+    pipeline, so the scaler fits on the train segment only - invariant I1 says
+    transformers fit on train, never on the full data. The ``scaled`` entry in
+    their recorded hyperparams marks the standardization as part of the model."""
     from sklearn.dummy import DummyClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
     from sklearn.tree import DecisionTreeClassifier
 
     neighbors = min(5, train_size)
@@ -72,13 +78,19 @@ def _model_specs(seed: int, train_size: int) -> list[ModelSpec]:
         ModelSpec("constant", lambda: DummyClassifier(strategy="prior"), ()),
         ModelSpec(
             "logistic",
-            lambda: LogisticRegression(C=1.0, max_iter=1000, random_state=seed),
-            (("C", 1.0), ("max_iter", 1000.0)),
+            lambda: Pipeline(
+                [("scale", StandardScaler()), ("model", LogisticRegression(C=1.0, max_iter=1000, random_state=seed))]
+            ),
+            (("C", 1.0), ("max_iter", 1000.0), ("scaled", 1.0)),
         ),
         ModelSpec(
             "decision_tree", lambda: DecisionTreeClassifier(max_depth=3, random_state=seed), (("max_depth", 3.0),)
         ),
-        ModelSpec("knn", lambda: KNeighborsClassifier(n_neighbors=neighbors), (("n_neighbors", float(neighbors)),)),
+        ModelSpec(
+            "knn",
+            lambda: Pipeline([("scale", StandardScaler()), ("model", KNeighborsClassifier(n_neighbors=neighbors))]),
+            (("n_neighbors", float(neighbors)), ("scaled", 1.0)),
+        ),
     ]
 
 

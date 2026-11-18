@@ -5,9 +5,9 @@
 ## 1. Phase 2：assay 協議與第一號真實標本
 
 - **I1/I2 執行期閘門** ✅ 閘門函數落地（2026-11-18，`invariants.py`）：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1：切分點掃描，任何標示為 train 的列不得晚於邊界）、`check_target_purity`（I2：目標不得入特徵；非鍵欄位必須宣告 `availability_lag_days`——匿名欄位即拒絕）。**待續**：目標衍生欄偵測隨 Phase 3 staining 登記制落地。
-- **assay 協議** ✅（2026-11-18，`assay.py`）：`PROTOCOLS` 登記制——入口順序＝protocol 查表→table 查表→I2 純淨→**I3 粒度**→表完整性（hash）→〔協議內〕契約→數值特徵／二元目標→I1 切分；`time-split-baseline`＝constant／logistic／decision_tree／knn，指標 ROC-AUC／PR-AUC；`[[assays]]` 紀錄（protocol／model／seed／切分身分／超參數／指標）只加不寫，寫入後標本仍可 `verify`。[ml] 相依只進此層；CI 裝 `.[dev,ml]`，未裝 [ml] 時 assay 測試自動略過。
+- **assay 協議** ✅（2026-11-18，`assay.py`）：`PROTOCOLS` 登記制——入口順序＝protocol 查表→table 查表→I2 純淨→**I3 粒度**→表完整性（hash）→〔協議內〕契約→數值特徵／二元目標→I1 切分；`time-split-baseline`＝constant／logistic／decision_tree／knn，指標 ROC-AUC／PR-AUC；`[[assays]]` 紀錄（protocol／model／seed／切分身分／超參數／指標）只加不寫，寫入後標本仍可 `verify`。[ml] 相依只進此層；CI 裝 `.[dev,ml]`，未裝 [ml] 時 assay 測試自動略過。**修訂**（2026-11-18 晚）：logistic／knn 改標準化管線（`StandardScaler` 只在 train 段 fit——I1 的轉換器規則；hyperparams 記 `scaled=1.0` 自述）。實測 stock_1101：knn ROC-AUC 0.31→0.52（越過常數基準）、PR-AUC 0.76→0.83；logistic 於 22 列測試窗仍低於常數——小樣本的誠實結果，非尺度問題。
 - **通用 SOP** ✅（2026-11-18，[SOP.md](SOP.md)）：五階段進出條件（DoD）、四閘門對照（每條不變量指向真實檢查器）、manifest 登錄責任表、四個領域擴充點（食譜包／契約詞彙／協議登記／擷取適配器）、新領域模組六項驗收清單。配套程式：I3 結構檢查（`grain_problems`＋`check_grain_separation`）入 manifest 驗證與 assay 入口——「assay 前四不變量逐一檢查」自此在程式上完全成立。
-- **`stock_1101` 食譜** ✅ 日頻部分落地（2026-11-18，SOP §7 六項驗收全綠）：契約先行（(date,symbol) 鍵、OHLCV 型別範圍、availability 全宣告——價量 0 天／label 90 天）；七個具名步驟（parse_months→normalize_roc_dates→strip_thousands→drop_incomplete→dedupe_keep_last→sort_by_key→label_forward_return_90d）；宣告規則含無成交日（`--`）丟棄與 90 天前瞻缺列丟棄；切分 train≤2025-12-31／test 為最後可完整標記窗口（2026-07-01 起，正負類皆有）；34 個月原料副本入 `tests/fixtures/stock_1101/`（出處註記），golden `tests/golden/stock-1101-s0/` 釘死；assay 過門（decision_tree ROC-AUC 0.64 最佳）。**待辦**：MOPS 季報 opendata 端點（opendata.tse.com.tw）於作者機器無法解析，可達後擴充 `scripts/acquire_1101.py` 與季頻表（as-of 對齊示範）。
+- **`stock_1101` 食譜** ✅ 日頻部分落地（2026-11-18，SOP §7 六項驗收全綠）：契約先行（(date,symbol) 鍵、OHLCV 型別範圍、availability 全宣告——價量 0 天／label 90 天）；七個具名步驟（parse_months→normalize_roc_dates→strip_thousands→drop_incomplete→dedupe_keep_last→sort_by_key→label_forward_return_90d）；宣告規則含無成交日（`--`）丟棄與 90 天前瞻缺列丟棄；切分 train≤2025-12-31／test 為最後可完整標記窗口（2026-07-01 起，正負類皆有）；34 個月原料副本入 `tests/fixtures/stock_1101/`（出處註記），golden `tests/golden/stock-1101-s0/` 釘死；assay 過門（decision_tree ROC-AUC 0.64 最佳）。**待辦**：MOPS 季報原料**外部阻斷**（2026-11-18 複查證據：`opendata.tse.com.tw` DNS NXDOMAIN——網域已不存在；主站 `mops.twse.com.tw` 可解析，但其查詢端點（`ajax_t164sb04`）對非瀏覽器客戶端回 947-byte 安全封鎖頁，補瀏覽器標頭亦然）。待官方提供新的機器可讀端點、或以瀏覽器手動下載原料入 `data/raw/` 後，再擴充 `scripts/acquire_1101.py` 與季頻表（as-of 對齊示範）。
 - ~~**切分應用 API**~~ ✅ `read_split`（2026-11-18）——manifest 登記的邊界是取得 train/valid/test 成員的唯一管道。
 
 ## 2. staining 程式庫（Phase 3 設計輸入）
@@ -27,7 +27,7 @@
 - **食譜原始碼 hash 入冊** ✅ 完成（2026-11-18, v0.2.0）：manifest 增 `[recipe].source_sha256`；verify 先具名診斷「程式碼漂移／步驟不符／原料 hash 不符」才重跑 I4。
 - **驗證與基礎設施強化** ✅ 完成（2026-11-18）：rows 以 csv.reader 計數（引號內換行安全）；catalog 遇壞標本回報不 crash；manifest／integrity 報告旗標解耦；日期改嚴格日曆驗證（`2026-02-31` 不再通過）；CI 增 3.14 矩陣與打包安裝 job。
 - **parquet 判準**（DESIGN 開放問題 1）：欄數 > ~500 或型別保真需求出現時引入 `[etl]` 輸出選項；CSV＋golden 是 v0.x 基準。
-- **環境記錄 UI**：`prepare --annotate-environment`（決定論優先——環境是註記不是重現輸入，DESIGN §5）。
+- ~~**環境記錄 UI**~~ ✅ `prepare --annotate-environment`（2026-11-18）：opt-in 填入 `created` 與 `[environment]`（python／system）；註記不影響 verify 四項，預設仍逐位元決定論。
 - ~~**v0.1.0 tag**~~ ✅ v0.1.0 標記於 Phase 1 commit；v0.2.0（manifest 格式增 `source_sha256`）隨後——格式凍結自此起算。
 
 ## 5. 已回答的設計問題（歸檔）

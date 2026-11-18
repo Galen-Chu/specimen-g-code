@@ -68,6 +68,8 @@ assay（閘門→訓練→[[assays]] 紀錄）◄──catalog（封存＋verify
 **assay 檢驗**
 - 禁止自切：train/valid/test 只能來自 `read_split`＋manifest 登記的邊界。
 - 禁止目標入特徵；禁止匿名可用性（I2）；禁止粒度漂移的 manifest（I3）。
+- 轉換器只在 train 段 fit（I1）：尺度敏感模型（logistic／knn）的標準化包在管線內，
+  紀錄以 `scaled` 超參數自述。
 - 紀錄只加不寫：`[[assays]]` 不可覆寫或刪改；重跑＝新紀錄。
 - 指標是「一次執行的註記」：同環境可重現，跨環境僅供參考（[ml] 版本敏感）。
 

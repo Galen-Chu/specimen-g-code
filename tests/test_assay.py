@@ -65,6 +65,10 @@ def test_assay_appends_records_and_keeps_the_specimen_verifiable(tmp_path: Path)
     assert [r.model for r in records] == ["constant", "logistic", "decision_tree", "knn"]
     assert all(r.protocol == "time-split-baseline" and r.train_end == TRAIN_END for r in records)
     assert all(0.0 <= value <= 1.0 for r in records for _, value in r.metrics)
+    by_model = {r.model: r for r in records}
+    for name in ("logistic", "knn"):  # scale-sensitive models standardize on the train segment (I1)
+        assert ("scaled", 1.0) in by_model[name].hyperparams, name
+    assert not any(k == "scaled" for k, _ in by_model["constant"].hyperparams)
     on_disk = parse_manifest((directory / "manifest.toml").read_text(encoding="utf-8"))
     assert on_disk.assays == tuple(records)
     ok, report = verify(directory)

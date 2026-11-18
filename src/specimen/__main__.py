@@ -22,6 +22,11 @@ def main(argv: list[str] | None = None) -> int:
     prep.add_argument("--seed", type=int, default=0)
     prep.add_argument("--raw", type=Path, required=True, help="directory holding the recipe's raw inputs")
     prep.add_argument("--out", type=Path, required=True, help="specimen directory to seal")
+    prep.add_argument(
+        "--annotate-environment",
+        action="store_true",
+        help="annotate created/environment in the manifest (opt-in; annotations are not reproduction inputs)",
+    )
 
     check = commands.add_parser("verify", help="check a sealed specimen (integrity, contracts, I4 with --raw)")
     check.add_argument("specimen", type=Path)
@@ -40,7 +45,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "prepare":
         spec = REGISTRY[args.recipe]
-        manifest = prepare(args.recipe, args.seed, load_raw(args.raw, spec.inputs), args.out)
+        manifest = prepare(
+            args.recipe,
+            args.seed,
+            load_raw(args.raw, spec.inputs),
+            args.out,
+            annotate_environment=args.annotate_environment,
+        )
         print(f"sealed {args.out}  ({manifest.name} v{manifest.version}, {len(manifest.outputs)} outputs)")
         return 0
     if args.command == "verify":

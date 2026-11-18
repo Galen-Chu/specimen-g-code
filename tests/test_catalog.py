@@ -140,3 +140,16 @@ def test_golden_specimen_is_byte_identical(tmp_path: Path) -> None:
 def test_unknown_recipe_key_is_clear(tmp_path: Path) -> None:
     with pytest.raises(KeyError):
         prepare("nonexistent", 0, RAW, tmp_path / "x")
+
+
+def test_environment_annotation_is_opt_in(tmp_path: Path) -> None:
+    """Annotations describe the sealing machine; they never affect verification."""
+    annotated = tmp_path / "annotated"
+    prepare("demo_vitals", 7, RAW, annotated, annotate_environment=True)
+    text = (annotated / "manifest.toml").read_text(encoding="utf-8")
+    assert "created = " in text and "[environment]" in text and "python" in text
+    ok, report = verify(annotated, RAW)
+    assert ok, report
+    plain = tmp_path / "plain"
+    prepare("demo_vitals", 7, RAW, plain)
+    assert "created" not in (plain / "manifest.toml").read_text(encoding="utf-8")  # default stays deterministic

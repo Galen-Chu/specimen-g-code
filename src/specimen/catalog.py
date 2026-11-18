@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import csv
 import io
+import platform
 from collections.abc import Mapping
+from datetime import date
 from pathlib import Path
 
 from .contract import validate_all
@@ -40,8 +42,22 @@ def _count_rows(text: str) -> int:
     return max(sum(1 for _ in csv.reader(io.StringIO(text))) - 1, 0)
 
 
-def prepare(recipe_name: str, seed: int, raw: Mapping[str, bytes], out: str | Path, version: int = 1) -> Manifest:
-    """Run a recipe and seal a specimen directory (idempotent, deterministic)."""
+def prepare(
+    recipe_name: str,
+    seed: int,
+    raw: Mapping[str, bytes],
+    out: str | Path,
+    version: int = 1,
+    annotate_environment: bool = False,
+) -> Manifest:
+    """Run a recipe and seal a specimen directory (idempotent, deterministic).
+
+    ``annotate_environment`` is the one opt-in that consults the clock and the
+    platform: it fills the manifest's ``created`` date and an ``environment``
+    section (python/system). Annotations describe the sealing machine — they
+    are never reproduction inputs, and they do break cross-machine
+    byte-identical manifests; that is exactly why they are opt-in.
+    """
     spec = REGISTRY[recipe_name]
     missing = [name for name in spec.inputs if name not in raw]
     if missing:
@@ -74,6 +90,12 @@ def prepare(recipe_name: str, seed: int, raw: Mapping[str, bytes], out: str | Pa
         outputs=tuple(sealed),
         contracts=spec.contracts,
         splits=spec.splits,
+        created=date.today().isoformat() if annotate_environment else None,
+        environment=(
+            (("python", platform.python_version()), ("system", platform.system().lower()))
+            if annotate_environment
+            else ()
+        ),
     )
     problems = validate_manifest(manifest)
     if problems:
