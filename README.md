@@ -74,7 +74,7 @@ cd specimen-g-code && pip install -e ".[dev]"   # 核心零相依；dev = pytest
 PYTHONPATH=src python -m specimen prepare demo_vitals --seed 7 --raw tests/fixtures --out specimens/demo-vitals-s7
 PYTHONPATH=src python -m specimen verify  specimens/demo-vitals-s7 --raw tests/fixtures   # I4 逐位元驗證
 PYTHONPATH=src python -m specimen catalog specimens
-python -m pytest                                    # 36 tests, 含 golden 逐位元比對
+python -m pytest                                    # 45 tests, 含 golden 逐位元比對
 ```
 
 （Windows PowerShell：`$env:PYTHONPATH="src"`。`specimen prepare` 封存的標本是自描述的——manifest＋契約即可解讀，不需要本專案的程式碼。）
@@ -88,6 +88,7 @@ python -m pytest                                    # 36 tests, 含 golden 逐�
 | `specimen/catalog.py` | prepare（封存）／verify（完整性＋契約＋I4 重現）／catalog（清單） | ✅ |
 | `specimen/recipes/` | 食譜註冊表＋`demo_vitals`（髒資料→雙粒度表的機械證明） | ✅（demo） |
 | `specimen/__main__.py` | CLI：prepare／verify／catalog | ✅ |
+| `specimen/invariants.py` | 執行期閘門：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1 切分點掃描）、`check_target_purity`（I2 目標純淨／availability 必須宣告） | ✅（2026-11-18） |
 | `specimen/assay/` | 檢驗協議：時間切分、I1/I2 執行期閘門、模型比較表 | Phase 2 |
 | `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW） | Phase 2 |
 
@@ -104,7 +105,7 @@ python -m pytest                                    # 36 tests, 含 golden 逐�
 
 - [x] **Phase 0（2026-11-16）**：設計定案（DESIGN.md）、案例研究、manifest 草案、套件骨架
 - [x] **Phase 1（2026-11-16）**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）；demo_vitals 食譜證明全鏈；CLI＋CI；28 tests
-- [ ] **Phase 2**：`stock_1101` 食譜完整落地——五階段、四不變量全綠；assay 協議（時間切分＋I1/I2 閘門＋基準模型比較表）
+- [ ] **Phase 2**（進行中）：`stock_1101` 食譜完整落地——五階段、四不變量全綠；assay 協議（時間切分＋I1/I2 閘門＋基準模型比較表）。2026-11-18：I1/I2 閘門與切分讀取器（`invariants.py`）已落地並有測試；下一步 assay runner 接線與 stock_1101 原料定案
 - [ ] **Phase 3**：staining 程式庫（欄位算術 DSL）＋特徵選取協議（相關分析／MI／RFE 的登記化）
 - [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群
 - [ ] **Phase 5**：漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）

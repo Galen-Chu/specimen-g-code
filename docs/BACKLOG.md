@@ -4,10 +4,10 @@
 
 ## 1. Phase 2：assay 協議與第一號真實標本
 
-- **I1/I2 執行期閘門**：契約已宣告 `availability_lag_days`（I2）與時間切分（I1 結構）；Phase 2 要在 assay 入口真正執行——切分點掃描（train 不得晚於 test）與特徵可用時間檢查（目標及其同期衍生欄排除）。
+- **I1/I2 執行期閘門** ✅ 閘門函數落地（2026-11-18，`invariants.py`）：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1：切分點掃描，任何標示為 train 的列不得晚於邊界）、`check_target_purity`（I2：目標不得入特徵；非鍵欄位必須宣告 `availability_lag_days`——匿名欄位即拒絕）。**待續**：assay runner 在入口接線這三個閘門；目標衍生欄偵測隨 Phase 3 staining 登記制落地。
 - **assay 協議**：`specimen assay <dir> --protocol time-split-baseline`——在登記的切分上跑基準模型比較表（logistic／決策樹／KNN／常數基準），超參數＋種子＋指標寫回 manifest 的 `[[assays]]`（只加不寫）。評測指標從分類 ROC-AUC／PR-AUC 起步（[ml] 選配相依只進 assay 層）。
 - **`stock_1101` 食譜**：依 [CASE-STUDY-1101TW.md](CASE-STUDY-1101TW.md) §4 落地。**前置決定**：原料來源——補齊評測環境的原始 JSON，或以 repo 現有 CSV 當「已製備 v0」原料（案例研究 §1 的待決項）。
-- **切分應用 API**：manifest 已登記邊界；Phase 2 給 assay 一個讀取器（哪段屬 train/valid/test），杜絕各實驗自切。
+- ~~**切分應用 API**~~ ✅ `read_split`（2026-11-18）——manifest 登記的邊界是取得 train/valid/test 成員的唯一管道。
 
 ## 2. staining 程式庫（Phase 3 設計輸入）
 
