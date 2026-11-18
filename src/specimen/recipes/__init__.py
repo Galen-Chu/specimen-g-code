@@ -42,7 +42,7 @@ class RecipeSpec:
     run: RecipeFn
 
 
-from . import demo_vitals  # noqa: E402 - registry assembled after the spec type
+from . import demo_vitals, stock_1101  # noqa: E402 - registry assembled after the spec type
 
 REGISTRY: dict[str, RecipeSpec] = {
     "demo_vitals": RecipeSpec(
@@ -54,5 +54,15 @@ REGISTRY: dict[str, RecipeSpec] = {
         contracts=demo_vitals.CONTRACTS,
         splits=demo_vitals.SPLITS,
         run=demo_vitals.run,
+    ),
+    "stock_1101": RecipeSpec(
+        name="stock_1101",
+        module="specimen.recipes.stock_1101",
+        source_sha256=hash_module(stock_1101),
+        steps=stock_1101.STEPS,
+        inputs=stock_1101.INPUTS,
+        contracts=stock_1101.CONTRACTS,
+        splits=stock_1101.SPLITS,
+        run=stock_1101.run,
     ),
 }

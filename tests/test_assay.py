@@ -141,3 +141,20 @@ def test_assay_refuses_a_manifest_with_drifted_grains(tmp_path: Path) -> None:
     write_manifest(drifted, directory / "manifest.toml")
     with pytest.raises(ValueError, match="grain"):
         run_assay(directory, "daily", "label", FEATURES)
+
+
+def test_assay_on_the_first_real_specimen(tmp_path: Path) -> None:
+    """SOP checklist item 6: stock_1101 passes the door and records a real comparison."""
+    from specimen import load_raw, prepare
+    from specimen.recipes import REGISTRY
+
+    fixtures = Path(__file__).parent / "fixtures" / "stock_1101"
+    raw = load_raw(fixtures, REGISTRY["stock_1101"].inputs)
+    directory = tmp_path / "stock-1101-s0"
+    prepare("stock_1101", 0, raw, directory)
+    features = ("open", "high", "low", "close", "volume", "value", "transactions")
+    records = run_assay(directory, "daily", "label", features, seed=0)
+    assert [r.model for r in records] == ["constant", "logistic", "decision_tree", "knn"]
+    assert all(0.0 <= value <= 1.0 for r in records for _, value in r.metrics)
+    ok, report = verify(directory)
+    assert ok, report

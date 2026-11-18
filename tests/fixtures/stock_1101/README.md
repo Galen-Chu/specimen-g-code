@@ -1,0 +1,1 @@
+Raw material for the stock_1101 recipe: verbatim monthly rwd/zh/afterTrading/STOCK_DAY JSON for 1101.TW (Taiwan Cement), fetched 2026-11-18 by scripts/acquire_1101.py from TWSE open data (https://www.twse.com.tw). Government open data - redistribution permitted with source attribution.

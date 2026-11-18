@@ -1,0 +1,198 @@
+[specimen]
+name = "stock-1101-s0"
+version = 1
+seed = 0
+
+[recipe]
+module = "specimen.recipes.stock_1101"
+steps = ["parse_months", "normalize_roc_dates", "strip_thousands", "drop_incomplete", "dedupe_keep_last", "sort_by_key", "label_forward_return_90d"]
+source_sha256 = "cf8fe39a348913e170c9beafc1da5600d97bd958fc60ae9bc37bfceaaae75fab"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202401.json"
+sha256 = "69ea2337c8a675aac68a06599f83c0bb974b6e4a5524a16bf341cafa79ef347f"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202402.json"
+sha256 = "98d065558cc9d607caae2eed4bf5c0d778860506265ca0e73e63c9df1733e108"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202403.json"
+sha256 = "8d948e83d40b4957806919110e076e7154bf7dda7166d4cd61953a25860385c7"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202404.json"
+sha256 = "ce41b2b049521ab1864222bedf43c826998f129fa4b7a647d692564fbc27b64e"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202405.json"
+sha256 = "ff1e236f79039294ca96ed80dd7f3308c527d00f0c5e16ea8999851e3ad91fac"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202406.json"
+sha256 = "b8df40b07feb76917a0b95a79970ca1c8ac671e2c1a2656be6377058e80c8489"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202407.json"
+sha256 = "6b117fefe7fb891567977f52c12b630521166073c7ae3fbb614a91f769e8e583"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202408.json"
+sha256 = "a53edb8b72a534bc690e08ba4952b57563faff0e46c2767c45801ce7b6824c02"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202409.json"
+sha256 = "cd29b4114834cd4f165c71ea072f54f6b89a74949ec4f6160fd988ee0b992c7b"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202410.json"
+sha256 = "13559be609d2476cead1a21ae10f7ddc402778d85d06cc17e58e358d26151c7d"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202411.json"
+sha256 = "61da6830c00291327cb4bed1af1d31754047a7c5a484722712c69f813a2afd64"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202412.json"
+sha256 = "5d4521faaf8b8335000a96cac5e7a610a3fc340f330d41796892d38ceb58b2c7"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202501.json"
+sha256 = "9f0ba82294c1efa27e1ef0a65b06bbf34113bb0c075d4105e6d37a3d10b2be96"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202502.json"
+sha256 = "dfe7742e647d41ccea48a01fca1aa60c4a6a31ad9f67623d0a538358718a35b1"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202503.json"
+sha256 = "87c56ea607e52e4158bc68abec5b2dd22f27b6a96768f9337ba68925790f7767"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202504.json"
+sha256 = "cb4d4bbdf90648210bd8726356cf154cfa68a19f917271023980b0c26682eae5"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202505.json"
+sha256 = "7137f6adb1a171168097f2e1c4c60706eacf9bb941e9e11731fdb95356d7729d"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202506.json"
+sha256 = "ce462d20f50627ff32f702efc7fc46b3750355c9c84abc87610dedb7744d945b"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202507.json"
+sha256 = "10180aebadfc6127be3692b395116fef63137cb3b4f59b53719d0b7f3732dd65"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202508.json"
+sha256 = "17445ab092ce42de89d852302470e3f38913f0a28aeef20e52a4cb73e2db9d67"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202509.json"
+sha256 = "9ae68bb4b444ac5339ee999569a6211c0ea3a694613504cce79a2dc37309d39e"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202510.json"
+sha256 = "a70e885c476b0ea677442e5f3e760844b87dd99930cec399c195fbfb8c6da7e7"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202511.json"
+sha256 = "a62be75d288d380afa81bbc18fafbb0443e5a780f553edb7d050547e648f3ce6"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202512.json"
+sha256 = "51b991ff8016d1825333819c853485bda353d9e81575c9919c1236e97a583a32"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202601.json"
+sha256 = "2f5b83eb231ef8587667fea62e6aac4895a16bc38ea9cd50097f8700f3c95ce4"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202602.json"
+sha256 = "db9e1d5eae8dd197f039944f0d7b0e199dab8927a4500dc8d7af67be68d60e12"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202603.json"
+sha256 = "fd1dd70da418d4d613eeba17ffab0da69f24030171376d26a55bfc763288f008"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202604.json"
+sha256 = "ab3d485662cd0473affa59f39ae03b4a54d6aab4f7f577539d060392c598dbc1"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202605.json"
+sha256 = "2bde2bd28ab7578dfaa5b80216cc1bc5aff5349cfaba7c57eff504dc62b1658b"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202606.json"
+sha256 = "e18e0edb77922df6ed30f28e44a4e0162e21c9698a51e6759883d69fe20776bc"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202607.json"
+sha256 = "a7e3b6a9965e5171304d269d86111672d4cb7f2838ed0b95165a9b5e4ffdbc8f"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202608.json"
+sha256 = "6a940ded44b56b9728157834b6ba98f487df8960040623c9bcf713fd1b0aad8b"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202609.json"
+sha256 = "940808b14a658103aacd5a7b430c65406fcad646e25e420a688984bdb8eb2ab0"
+
+[[recipe.inputs]]
+path = "twse_stock_day_202610.json"
+sha256 = "84cce8cb0059a2207c6ffb39ae837b85663eda8f634ac503ff2f23d2f6eeb097"
+
+[splits]
+method = "time-ordered"
+train_end = "2025-12-31"
+valid_end = "2026-06-30"
+
+[[outputs]]
+name = "daily"
+grain = "daily"
+file = "daily.csv"
+sha256 = "acf0385f749f8b9f05524def2a5d728516de3f977cde52cb22b197e9069bd7a3"
+rows = 622
+
+[contracts.daily]
+grain = "daily"
+key = ["date", "symbol"]
+[contracts.daily.columns.close]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.date]
+type = "date"
+[contracts.daily.columns.high]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.label]
+type = "int"
+lo = 0.0
+hi = 1.0
+availability_lag_days = 90.0
+[contracts.daily.columns.low]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.open]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.symbol]
+type = "string"
+[contracts.daily.columns.transactions]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.value]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.daily.columns.volume]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0

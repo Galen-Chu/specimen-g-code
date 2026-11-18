@@ -104,7 +104,7 @@ manifest 各節的填寫者與不變性（格式由 `render_manifest` 決定論�
 
 | 擴充點 | 領域差異所在 | 機制 | 既有實例 |
 |---|---|---|---|
-| **食譜包** recipe pack | 清洗與轉換邏輯 | `specimen/recipes/<domain>/`＋`REGISTRY` 登記 | `demo_vitals`（demo）；`stock_1101`（進行中，金融） |
+| **食譜包** recipe pack | 清洗與轉換邏輯 | `specimen/recipes/<domain>/`＋`REGISTRY` 登記 | `demo_vitals`（demo）；`stock_1101`（金融，已落地——日頻） |
 | **契約詞彙** vocabulary | 欄位語義（揭露延遲 vs 取樣延遲；未來的事件區間等） | `ColumnSpec` 詞彙擴充，不另起系統 | `availability_lag_days` |
 | **assay 協議** protocol | 評測形態（分類／迴歸／其他） | `PROTOCOLS` 登記制，同一 `[[assays]]` 章節收紀錄 | `time-split-baseline` |
 | **擷取適配器** adapter | 各資料源的抓取 | `scripts/acquire_*.py`（純 stdlib） | `acquire_1101.py` |

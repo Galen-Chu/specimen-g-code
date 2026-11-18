@@ -6,6 +6,7 @@
 > golden 逐位元重現、CLI 與 CI 已上線；assay 協議與第一號真實標本（stock_1101）見路線圖。
 > 🧪 v0.2.0（2026-11-18）：食譜原始碼 hash 入冊——`verify` 能具名識破「封存後程式碼漂移」。
 > 📋 通用作業流程已定案（2026-11-18）：[docs/SOP.md](docs/SOP.md)——五階段進出條件、四閘門對照、四領域擴充點、新領域驗收清單。
+> 🏷️ 第一號真實標本落地（2026-11-18）：`stock_1101`——TWSE 開放資料重爬→宣告式清潔→90 天前瞻目標→golden 釘死→assay 過門，SOP 六項驗收全綠。
 
 ---
 
@@ -75,7 +76,7 @@ cd specimen-g-code && pip install -e ".[dev]"   # 核心零相依；dev = pytest
 PYTHONPATH=src python -m specimen prepare demo_vitals --seed 7 --raw tests/fixtures --out specimens/demo-vitals-s7
 PYTHONPATH=src python -m specimen verify  specimens/demo-vitals-s7 --raw tests/fixtures   # I4 逐位元驗證
 PYTHONPATH=src python -m specimen catalog specimens
-python -m pytest                                    # 56 tests, 含 golden 逐位元比對（assay 測試需 [ml]，未裝則略過）
+python -m pytest                                    # 62 tests, 含兩個 golden 標本逐位元比對（assay 測試需 [ml]，未裝則略過）
 ```
 
 （Windows PowerShell：`$env:PYTHONPATH="src"`。`specimen prepare` 封存的標本是自描述的——manifest＋契約即可解讀，不需要本專案的程式碼。）
@@ -87,10 +88,11 @@ python -m pytest                                    # 56 tests, 含 golden 逐�
 | `specimen/manifest.py` | 標本登錄：inputs／recipe（含原始碼 hash）／outputs／contracts／splits；決定論 TOML 序列化＋結構驗證 | ✅ |
 | `specimen/contract.py` | 表契約：型別、範圍、鍵唯一性（schema 章節） | ✅ |
 | `specimen/catalog.py` | prepare（封存）／verify（完整性＋契約＋I4 重現）／catalog（清單） | ✅ |
-| `specimen/recipes/` | 食譜註冊表＋`demo_vitals`（髒資料→雙粒度表的機械證明） | ✅（demo） |
+| `specimen/recipes/` | 食譜註冊表＋`demo_vitals`（髒資料→雙粒度表的機械證明）＋`stock_1101`（第一號真實標本：TWSE 開放資料→乾淨日頻表→90 天前瞻目標） | ✅ |
 | `specimen/__main__.py` | CLI：prepare／verify／catalog | ✅ |
 | `specimen/invariants.py` | 執行期閘門：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1）、`check_target_purity`（I2／availability 必須宣告）、`check_grain_separation`（I3 結構面） | ✅（2026-11-18） |
 | `specimen/assay.py` | 檢驗協議（`PROTOCOLS` 登記制）：入口閘門 I2→I3→完整性→〔協議內〕契約→數值／二元→I1；`time-split-baseline`＝constant／logistic／decision_tree／knn＋ROC-AUC／PR-AUC；`[[assays]]` 只加不寫；[ml] 刀片，核心零相依 | ✅（2026-11-18） |
+| `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW）：宣告式清潔規則（民國日期、千分位、無成交日、90 天前瞻缺列丟棄）、availability 全宣告、golden 釘死、assay 過門 | ✅（2026-11-18） |
 | `scripts/acquire_1101.py` | 原料擷取：TWSE 開放資料逐月重爬 1101.TW 日頻（原樣入 `data/raw/`，僅此階段碰網路） | ✅（2026-11-18） |
 | `specimen/recipes/stock_1101` | 第一號真實標本（1101.TW） | Phase 2 |
 
@@ -107,7 +109,7 @@ python -m pytest                                    # 56 tests, 含 golden 逐�
 
 - [x] **Phase 0（2026-11-16）**：設計定案（DESIGN.md）、案例研究、manifest 草案、套件骨架
 - [x] **Phase 1（2026-11-16）**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）；demo_vitals 食譜證明全鏈；CLI＋CI；28 tests
-- [ ] **Phase 2**（進行中）：`stock_1101` 食譜完整落地——五階段、四不變量全綠；assay 協議（時間切分＋I1/I2 閘門＋基準模型比較表）。2026-11-18：I1/I2 閘門、切分讀取器與 assay runner 已落地並有測試；原料定案為 TWSE 開放資料重爬（34 個月已入 `data/raw/`）；剩 `stock_1101` 食譜本體
+- [ ] **Phase 2**（收尾中）：`stock_1101` 食譜**日頻部分已落地**（2026-11-18，SOP 六項驗收全綠）——TWSE 開放資料重爬、宣告式清潔規則、90 天前瞻目標、golden 釘死、assay 基準比較表。**剩餘**：MOPS 季報 opendata 端點可達後擴充季頻表（as-of 對齊示範 I3 的操作面）
 - [ ] **Phase 3**：staining 程式庫（欄位算術 DSL）＋特徵選取協議（相關分析／MI／RFE 的登記化）
 - [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群
 - [ ] **Phase 5**：漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）
