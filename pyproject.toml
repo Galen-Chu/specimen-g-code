@@ -40,6 +40,10 @@ testpaths = ["tests"]
 strict = true
 files = ["src"]
 
+[[tool.mypy.overrides]]
+module = "sklearn.*"
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"

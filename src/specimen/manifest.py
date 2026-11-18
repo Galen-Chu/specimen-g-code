@@ -72,6 +72,24 @@ class Splits:
 
 
 @dataclass(frozen=True)
+class AssayRecord:
+    """One executed assay: append-only evidence, never a reproduction input.
+
+    Records the protocol, model, its declared hyperparameters, the seed and
+    the splits the run used (DESIGN section 2, open question 3's minimum:
+    hyperparams + seed + metrics + split identity).
+    """
+
+    protocol: str
+    model: str
+    seed: int
+    train_end: str
+    valid_end: str
+    hyperparams: tuple[tuple[str, float], ...] = ()
+    metrics: tuple[tuple[str, float], ...] = ()
+
+
+@dataclass(frozen=True)
 class Manifest:
     name: str
     version: int
@@ -83,6 +101,7 @@ class Manifest:
     outputs: tuple[Output, ...]
     contracts: tuple[TableContract, ...]
     splits: Splits
+    assays: tuple[AssayRecord, ...] = ()  # append-only run records
     created: str | None = None  # opt-in annotation; never consulted for reproduction
     environment: tuple[tuple[str, str], ...] = ()  # opt-in, e.g. (("python", "3.13"),)
 
@@ -153,6 +172,22 @@ def render_manifest(m: Manifest) -> str:
             if column.availability_lag_days is not None:
                 lines.append(f"availability_lag_days = {column.availability_lag_days!r}")
         lines.append("")
+    for record in m.assays:
+        lines += [
+            "[[assays]]",
+            f"protocol = {_q(record.protocol)}",
+            f"model = {_q(record.model)}",
+            f"seed = {record.seed}",
+            f"train_end = {_q(record.train_end)}",
+            f"valid_end = {_q(record.valid_end)}",
+        ]
+        if record.hyperparams:
+            lines.append("[assays.hyperparams]")
+            lines += [f"{key} = {value!r}" for key, value in record.hyperparams]
+        if record.metrics:
+            lines.append("[assays.metrics]")
+            lines += [f"{key} = {value!r}" for key, value in record.metrics]
+        lines.append("")
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
@@ -184,6 +219,9 @@ def validate_manifest(m: Manifest) -> list[str]:
         for column in contract.columns:
             if column.type not in TYPE_NAMES:
                 problems.append(f"contract {contract.name}.{column.name}: unknown type {column.type!r}")
+    for record in m.assays:
+        if not record.protocol or not record.model or not record.metrics:
+            problems.append("assay records require protocol, model and metrics")
     return problems
 
 
@@ -217,6 +255,18 @@ def parse_manifest(text: str) -> Manifest:
         for name, c in data["contracts"].items()
     )
     environment = tuple(sorted(data.get("environment", {}).items()))
+    assays = tuple(
+        AssayRecord(
+            protocol=a["protocol"],
+            model=a["model"],
+            seed=a["seed"],
+            train_end=a["train_end"],
+            valid_end=a["valid_end"],
+            hyperparams=tuple(sorted(a.get("hyperparams", {}).items())),
+            metrics=tuple(sorted(a.get("metrics", {}).items())),
+        )
+        for a in data.get("assays", [])
+    )
     return Manifest(
         name=specimen["name"],
         version=specimen["version"],
@@ -228,6 +278,7 @@ def parse_manifest(text: str) -> Manifest:
         outputs=outputs,
         contracts=contracts,
         splits=Splits(method=splits["method"], train_end=splits["train_end"], valid_end=splits["valid_end"]),
+        assays=assays,
         created=data.get("created"),
         environment=environment,
     )

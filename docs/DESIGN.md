@@ -4,8 +4,9 @@
 > 實際輸出，由 golden 標本（`tests/golden/demo-vitals-s7/`）逐位元釘死；`created`
 > 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。v0.2.0
 > （2026-11-18）：manifest 增 `[recipe].source_sha256`（食譜原始碼身分），verify
-> 對程式碼漂移拒絕出具 I4 證明。難以反悔的決定以本文件章節更新並註明日期；
-> 工作項清單見 [BACKLOG.md](BACKLOG.md)。
+> 對程式碼漂移拒絕出具 I4 證明。Phase 2 進行中（2026-11-18）：`invariants.py`
+> 閘門、`assay.py`（time-split-baseline）與 `[[assays]]` 登記已實作。難以反悔的
+> 決定以本文件章節更新並註明日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
 
 ## 1. 目標與非目標
 
@@ -71,11 +72,17 @@ method = "time-ordered"
 train_end = "2023-01-01"
 valid_end = "2023-07-01"
 
-[[assays]]                     # 檢驗紀錄：可累加，永不覆寫
+[[assays]]                     # 檢驗紀錄：可累加，永不覆寫（assay runner 寫入）
 protocol = "time-split-baseline"
 model = "logistic"
-hyperparams = { C = 1.0 }
-metrics = { roc_auc = 0.0, pr_auc = 0.0 }   # 由 assay runner 寫入
+seed = 7
+train_end = "2023-01-01"       # 切分身分隨紀錄走（開放問題 3 的最低要求）
+valid_end = "2023-07-01"
+[assays.hyperparams]
+C = 1.0
+[assays.metrics]
+roc_auc = 0.0
+pr_auc = 0.0
 ```
 
 規則：

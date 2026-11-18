@@ -4,9 +4,9 @@
 
 ## 1. Phase 2：assay 協議與第一號真實標本
 
-- **I1/I2 執行期閘門** ✅ 閘門函數落地（2026-11-18，`invariants.py`）：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1：切分點掃描，任何標示為 train 的列不得晚於邊界）、`check_target_purity`（I2：目標不得入特徵；非鍵欄位必須宣告 `availability_lag_days`——匿名欄位即拒絕）。**待續**：assay runner 在入口接線這三個閘門；目標衍生欄偵測隨 Phase 3 staining 登記制落地。
-- **assay 協議**：`specimen assay <dir> --protocol time-split-baseline`——在登記的切分上跑基準模型比較表（logistic／決策樹／KNN／常數基準），超參數＋種子＋指標寫回 manifest 的 `[[assays]]`（只加不寫）。評測指標從分類 ROC-AUC／PR-AUC 起步（[ml] 選配相依只進 assay 層）。
-- **`stock_1101` 食譜**：依 [CASE-STUDY-1101TW.md](CASE-STUDY-1101TW.md) §4 落地。**前置決定**：原料來源——補齊評測環境的原始 JSON，或以 repo 現有 CSV 當「已製備 v0」原料（案例研究 §1 的待決項）。
+- **I1/I2 執行期閘門** ✅ 閘門函數落地（2026-11-18，`invariants.py`）：`read_split`（切分讀取器——切分屬標本，實驗不得自切）、`check_time_safety`（I1：切分點掃描，任何標示為 train 的列不得晚於邊界）、`check_target_purity`（I2：目標不得入特徵；非鍵欄位必須宣告 `availability_lag_days`——匿名欄位即拒絕）。**待續**：目標衍生欄偵測隨 Phase 3 staining 登記制落地。
+- **assay 協議** ✅（2026-11-18，`assay.py`）：`time-split-baseline`——入口順序＝I2 純淨→契約→表完整性（hash）→數值特徵／二元目標→I1 切分；基準比較表 constant／logistic／decision_tree／knn，指標 ROC-AUC／PR-AUC；`[[assays]]` 紀錄（protocol／model／seed／切分身分／超參數／指標）只加不寫，寫入後標本仍可 `verify`。[ml] 相依只進此層；CI 裝 `.[dev,ml]`，未裝 [ml] 時 assay 測試自動略過。
+- **`stock_1101` 食譜**：依 [CASE-STUDY-1101TW.md](CASE-STUDY-1101TW.md) §4 落地。**原料已定案**（2026-11-18）：opendata 重新爬取——TWSE 官網 `rwd/zh/afterTrading/STOCK_DAY` 逐月 JSON（`scripts/acquire_1101.py`；113/01–115/10 共 34 個月已落地 `data/raw/1101/`，依 .gitignore 政策不入 repo——標本由原料＋食譜＋種子重現）。**待辦**：MOPS 季報 opendata 端點（opendata.tse.com.tw）於作者機器無法解析，可達後擴充爬取腳本；食譜本體（ROC 日期正規化、千分位去逗號、粒度分離、90 天前瞻目標）為下一步。
 - ~~**切分應用 API**~~ ✅ `read_split`（2026-11-18）——manifest 登記的邊界是取得 train/valid/test 成員的唯一管道。
 
 ## 2. staining 程式庫（Phase 3 設計輸入）
