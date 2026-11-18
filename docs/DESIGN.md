@@ -1,13 +1,11 @@
 # 設計文件 Design
 
-> 狀態：Phase 1 已實作（2026-11-16）——§2 的 manifest 格式即 `render_manifest` 的
-> 實際輸出，由 golden 標本（`tests/golden/demo-vitals-s7/`）逐位元釘死；`created`
-> 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。v0.2.0
-> （2026-11-18）：manifest 增 `[recipe].source_sha256`（食譜原始碼身分），verify
-> 對程式碼漂移拒絕出具 I4 證明。Phase 2 進行中（2026-11-18）：`invariants.py`
-> 閘門（I1／I2／I3）、`assay.py`（time-split-baseline）與 `[[assays]]` 登記已實作；
-> 通用作業流程定案為 [SOP.md](SOP.md)。難以反悔的決定以本文件章節更新並註明
-> 日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
+> 狀態：Phase 1＋2 已實作（2026-11-16／2026-11-18）。§2 的 manifest 格式即
+> `render_manifest` 的實際輸出，由 golden 標本逐位元釘死（`demo-vitals-s7`、
+> `stock-1101-s0`）；`created`／`environment` 為 opt-in 註記；`[recipe].source_sha256`
+> 釘住食譜程式碼身分（v0.2.0）。四不變量閘門（`invariants.py`）與 assay 協議
+> （`assay.py`、`[[assays]]` 登記）已實作；作業流程章程見 [SOP.md](SOP.md)。
+> 難以反悔的決定以本文件章節更新並註明日期；工作項見 [BACKLOG.md](BACKLOG.md)。
 
 ## 1. 目標與非目標
 
@@ -153,7 +151,9 @@ sanctuary 的職掌）。schema 作為章節名保留在契約層，未來若需
 2. **staining DSL 的宣告式程度**：欄位算術登記到什麼粒度（表達力 vs 可審查性）？
    先從「具名步驟＋參數」開始，DSL 語法 Phase 3 再議。
 3. **assay 登記深度**：模型係數／超參數／指標要存多少才叫可重現？最低要求：
-   超參數＋種子＋評估指標＋切分版本。
+   超參數＋種子＋評估指標＋切分版本。**已落實**（2026-11-18）：`[[assays]]` 紀錄
+   含 protocol／model／seed／切分身分（train_end／valid_end）／hyperparams／metrics，
+   只加不寫；模型係數暫不入冊（基準協議的模型可由紀錄＋種子重建）。
 4. **標本命名與版本政策**：比照 sanctuary 的 `name@version` provenance？
    （傾向：是——manifest 已有 version 欄。）
 5. **schema 章節獨立化**：`contract.py` 是否在成熟後獨立成模組（保留
