@@ -5,8 +5,9 @@
 > 與 `environment` 為 **opt-in 註記**（自動記錄會破壞跨機逐位元重現）。v0.2.0
 > （2026-11-18）：manifest 增 `[recipe].source_sha256`（食譜原始碼身分），verify
 > 對程式碼漂移拒絕出具 I4 證明。Phase 2 進行中（2026-11-18）：`invariants.py`
-> 閘門、`assay.py`（time-split-baseline）與 `[[assays]]` 登記已實作。難以反悔的
-> 決定以本文件章節更新並註明日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
+> 閘門（I1／I2／I3）、`assay.py`（time-split-baseline）與 `[[assays]]` 登記已實作；
+> 通用作業流程定案為 [SOP.md](SOP.md)。難以反悔的決定以本文件章節更新並註明
+> 日期；工作項清單見 [BACKLOG.md](BACKLOG.md)。
 
 ## 1. 目標與非目標
 
@@ -114,8 +115,8 @@ pr_auc = 0.0
 |---|--------|--------------------------|---------|
 | I1 | 時間安全：切分按時間序；填充／標準化只在 train 段 fit | 全資料 `ffill().bfill()` 後隨機 `train_test_split` | 切分點掃描：任一 train 列的時間戳必須早於任一 test 列；轉換器宣告 fit 範圍 |
 | I2 | 目標純淨：特徵不含同期不可得欄位 | 以同季 `growthNetIncome` 等預測 `netIncomeGrowth` | 欄位可用時間（availability lag）登記於契約；assay 前掃描目標及其衍生欄 |
-| I3 | 粒度分離：不同粒度分表；合併一律 as-of | 日頻行的季報欄位被 `fillna(0)` 灌成假值 | manifest 的 outputs 各帶 grain；join 只允許 as-of 算子 |
-| I4 | 逐位元重現：（原料＋食譜＋種子）→ 相同輸出 | 可重現性只有 `random_state=42` | `specimen verify` 重跑食譜比對輸出 hash；CI golden 釘死 |
+| I3 | 粒度分離：不同粒度分表；合併一律 as-of | 日頻行的季報欄位被 `fillna(0)` 灌成假值 | manifest 的 outputs 各帶 grain；`check_grain_separation` 結構閘門（封存＋assay 入口）；join 只允許 as-of 算子 |
+| I4 | 逐位元重現：（原料＋食譜＋種子）→ 相同輸出 | 可重現性只有 `random_state=42` | `specimen verify` 先比對食譜原始碼 hash 與原料 hash（漂移具名）再重跑比對輸出；CI golden 釘死 |
 
 ## 5. 決定論與相依政策
 

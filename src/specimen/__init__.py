@@ -14,7 +14,7 @@ from __future__ import annotations
 from .catalog import catalog, load_raw, prepare, verify
 from .contract import parse_date, validate_all, validate_table
 from .hashing import sha256_bytes, sha256_file
-from .invariants import SplitAssignment, check_target_purity, check_time_safety, read_split
+from .invariants import SplitAssignment, check_grain_separation, check_target_purity, check_time_safety, read_split
 from .manifest import (
     ColumnSpec,
     Input,
@@ -43,6 +43,7 @@ __all__ = [
     "TableContract",
     "__version__",
     "catalog",
+    "check_grain_separation",
     "check_target_purity",
     "check_time_safety",
     "load_raw",

@@ -130,3 +130,14 @@ def test_assay_refuses_to_train_on_a_tampered_table(tmp_path: Path) -> None:
 def test_assay_refuses_unknown_protocols(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="protocol"):
         run_assay(build_specimen(tmp_path / "s"), "daily", "label", FEATURES, protocol="random-split")
+
+
+def test_assay_refuses_a_manifest_with_drifted_grains(tmp_path: Path) -> None:
+    directory = build_specimen(tmp_path / "s")
+    manifest = parse_manifest((directory / "manifest.toml").read_text(encoding="utf-8"))
+    from dataclasses import replace as _replace
+
+    drifted = _replace(manifest, contracts=(_replace(manifest.contracts[0], grain="weekly"),))
+    write_manifest(drifted, directory / "manifest.toml")
+    with pytest.raises(ValueError, match="grain"):
+        run_assay(directory, "daily", "label", FEATURES)

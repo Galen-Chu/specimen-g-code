@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from specimen.manifest import (
     ColumnSpec,
     Input,
@@ -78,3 +80,15 @@ def test_validation_catches_structural_invariants() -> None:
 
     bad_code = Manifest(**{**good.__dict__, "recipe_source_sha256": "short"})
     assert any("source_sha256" in p for p in validate_manifest(bad_code))
+
+    mismatched = Manifest(**{**good.__dict__, "contracts": (replace(good.contracts[0], grain="weekly"),)})
+    assert any("differs from output grain" in p for p in validate_manifest(mismatched))
+
+    bad_grain_name = Manifest(
+        **{
+            **good.__dict__,
+            "outputs": (replace(good.outputs[0], grain="Daily"),),
+            "contracts": (replace(good.contracts[0], grain="Daily"),),
+        }
+    )
+    assert any("must match" in p for p in validate_manifest(bad_grain_name))

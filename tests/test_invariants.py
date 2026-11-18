@@ -9,6 +9,7 @@ import pytest
 
 from specimen import (
     SplitAssignment,
+    check_grain_separation,
     check_target_purity,
     check_time_safety,
     parse_manifest,
@@ -69,6 +70,13 @@ def test_time_safety_reports_inverted_boundaries() -> None:
     assignment = read_split(TABLE, "date", SPLITS)
     problems = check_time_safety(assignment, replace(SPLITS, train_end="2026-01-25"))
     assert any("train_end < valid_end" in p for p in problems)
+
+
+def test_grain_separation_passes_golden_and_catches_drift() -> None:
+    manifest = parse_manifest((GOLDEN / "manifest.toml").read_text(encoding="utf-8"))
+    assert check_grain_separation(manifest) == []
+    drifted = replace(manifest, contracts=(replace(manifest.contracts[0], grain="weekly"),))
+    assert any("differs from output grain" in p for p in check_grain_separation(drifted))
 
 
 def test_target_purity_refuses_the_target_as_a_feature() -> None:

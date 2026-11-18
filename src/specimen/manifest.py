@@ -21,6 +21,7 @@ recorded code, not by whatever happens to be installed today.
 
 from __future__ import annotations
 
+import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -213,6 +214,7 @@ def validate_manifest(m: Manifest) -> list[str]:
     for out in m.outputs:
         if not out.grain or not out.file or len(out.sha256) != 64:
             problems.append(f"output {out.name!r}: grain, file and 64-char sha256 are required (I3)")
+    problems += grain_problems(m)
     for contract in m.contracts:
         if not contract.key:
             problems.append(f"contract {contract.name!r}: key is required (grain identity)")
@@ -222,6 +224,22 @@ def validate_manifest(m: Manifest) -> list[str]:
     for record in m.assays:
         if not record.protocol or not record.model or not record.metrics:
             problems.append("assay records require protocol, model and metrics")
+    return problems
+
+
+def grain_problems(m: Manifest) -> list[str]:
+    """I3 structure: grains are well-formed and each contract agrees with its output."""
+    problems: list[str] = []
+    output_grains = {o.name: o.grain for o in m.outputs}
+    for out in m.outputs:
+        if re.fullmatch(GRAIN_PATTERN, out.grain) is None:
+            problems.append(f"output {out.name!r}: grain {out.grain!r} must match {GRAIN_PATTERN}")
+    for contract in m.contracts:
+        declared = output_grains.get(contract.name)
+        if declared is not None and contract.grain != declared:
+            problems.append(
+                f"contract {contract.name!r}: grain {contract.grain!r} differs from output grain {declared!r} (I3)"
+            )
     return problems
 
 

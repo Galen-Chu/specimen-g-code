@@ -1,14 +1,17 @@
 """Runtime invariant gates (docs/DESIGN.md section 4).
 
-I1 (time safety) and I2 (target purity) are executed at the assay door,
-not advised in documentation. ``read_split`` is the only sanctioned way to
-obtain train/valid/test membership — splits belong to the specimen
-(DESIGN section 2), so self-cutting experiments have nothing to cut on.
-``check_time_safety`` re-verifies any labeling against the sealed
+I1 (time safety), I2 (target purity) and I3 (grain separation) are executed
+at the assay door, not advised in documentation. ``read_split`` is the only
+sanctioned way to obtain train/valid/test membership — splits belong to the
+specimen (DESIGN section 2), so self-cutting experiments have nothing to
+cut on. ``check_time_safety`` re-verifies any labeling against the sealed
 boundaries, catching labelings that arrived from anywhere else.
 ``check_target_purity`` refuses the target among the features and any
 non-key feature whose availability lag is undeclared: an anonymous column
-is a refusal, not an assumption.
+is a refusal, not an assumption. ``check_grain_separation`` is the
+structural half of I3; the operational half (cross-grain joins are as-of)
+becomes per-join checkable when staining's registered as-of step lands
+(Phase 3). I4 (bit-reproducibility) lives in ``catalog.verify``.
 
 Derivation detection (a feature computed from the target) lands with the
 staining registry in Phase 3; until then, declared availability is the
@@ -24,7 +27,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from .contract import parse_date
-from .manifest import Splits, TableContract
+from .manifest import Manifest, Splits, TableContract, grain_problems
 
 SEGMENTS = ("train", "valid", "test")
 
@@ -140,3 +143,15 @@ def check_target_purity(contract: TableContract, target: str, features: Sequence
         elif column.availability_lag_days < 0:
             problems.append(f"feature {name!r}: availability_lag_days must be >= 0")
     return problems
+
+
+def check_grain_separation(manifest: Manifest) -> list[str]:
+    """I3 gate (structural): every table lives at exactly one declared, well-formed grain.
+
+    Output and contract must agree on the grain, and the grain name must
+    follow the manifest pattern. Refuses mixed-grain or hand-drifted
+    manifests at the assay door; grain mixing itself is prevented at
+    preparation, where recipes that blur grains cannot seal contracts
+    that pass here.
+    """
+    return grain_problems(manifest)
