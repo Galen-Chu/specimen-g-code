@@ -129,6 +129,14 @@ def _int_or_none(value: str) -> int | None:
         return None
 
 
+def _toml_key(name: str) -> str:
+    """Bare key when the name is TOML-safe, quoted otherwise — channel names
+    like ``extero.food`` must not become nested tables."""
+    if re.fullmatch(r"[A-Za-z0-9_-]+", name):
+        return name
+    return _q(name)
+
+
 def render_manifest(m: Manifest) -> str:
     """Serialize deterministically to TOML text (LF, fixed field order)."""
     lines: list[str] = []
@@ -172,12 +180,12 @@ def render_manifest(m: Manifest) -> str:
         ]
     for contract in sorted(m.contracts, key=lambda c: c.name):
         lines += [
-            f"[contracts.{contract.name}]",
+            f"[contracts.{_toml_key(contract.name)}]",
             f"grain = {_q(contract.grain)}",
             "key = [" + ", ".join(_q(k) for k in contract.key) + "]",
         ]
         for column in sorted(contract.columns, key=lambda c: c.name):
-            lines.append(f"[contracts.{contract.name}.columns.{column.name}]")
+            lines.append(f"[contracts.{_toml_key(contract.name)}.columns.{_toml_key(column.name)}]")
             lines.append(f"type = {_q(column.type)}")
             if column.lo is not None:
                 lines.append(f"lo = {column.lo!r}")
@@ -225,18 +233,20 @@ def validate_manifest(m: Manifest) -> list[str]:
         problems.append("recipe: at least one input with sha256 is required")
     if any(len(i.sha256) != 64 for i in m.inputs):
         problems.append("recipe: input sha256 must be 64 hex characters")
-    if m.splits.method not in ("time-ordered", "seed-ordered"):
-        problems.append(f"splits: unsupported method {m.splits.method!r} ('time-ordered' or 'seed-ordered', ADR-0001)")
-    if m.splits.method == "seed-ordered":
+    if m.splits.method not in ("time-ordered", "integer-ordered"):
+        problems.append(
+            f"splits: unsupported method {m.splits.method!r} ('time-ordered' or 'integer-ordered', ADR-0001)"
+        )
+    if m.splits.method == "integer-ordered":
         train_seed = _int_or_none(m.splits.train_end)
         valid_seed = _int_or_none(m.splits.valid_end)
         if train_seed is None or valid_seed is None:
             problems.append(
-                f"splits: seed-ordered boundaries must be integer seeds, "
+                f"splits: integer-ordered boundaries must be integer seeds, "
                 f"got {m.splits.train_end!r}/{m.splits.valid_end!r}"
             )
         elif train_seed >= valid_seed:
-            problems.append("splits: seed-ordered needs train_end < valid_end")
+            problems.append("splits: integer-ordered needs train_end < valid_end")
     output_names = {o.name for o in m.outputs}
     contract_names = {c.name for c in m.contracts}
     if output_names != contract_names:

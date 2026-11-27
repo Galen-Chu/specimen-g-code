@@ -6,7 +6,7 @@ seed = 0
 [recipe]
 module = "specimen.recipes.sanctuary_worlds"
 steps = ["parse_population", "parse_worlds", "seed_crosscheck", "count_crosscheck", "sort_by_seed"]
-source_sha256 = "ca3e6f06d62e568cce1763ddbd6e7edab6aede3bb10f3af170d9b849d77d0bce"
+source_sha256 = "685d9847f3d2fd283d0bf98f17a9286d58c0bc64ec144f2817240146f96f1f1b"
 
 [[recipe.inputs]]
 path = "population.toml"
@@ -25,7 +25,7 @@ path = "meadow_s102.toml"
 sha256 = "a5ed919ef6b6e5934f280ac1d780e89f230a6995dbc717e552cad0c0bed11f94"
 
 [splits]
-method = "seed-ordered"
+method = "integer-ordered"
 train_end = "100"
 valid_end = "101"
 

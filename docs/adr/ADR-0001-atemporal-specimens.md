@@ -1,6 +1,10 @@
 # ADR-0001：無時間軸標本的切分法 Atemporal Specimen Splits
 
-- 狀態：Accepted（2026-11-27）
+- 狀態：Accepted（2026-11-27）；**Amended 2026-11-27（同日）**：method 更名
+  `seed-ordered` → `integer-ordered`——Phase 4b 的 Unbodysoma 訊號標本以
+  「模擬秒」為整數序軸（不是種子），證明此法是通用的整數鍵切分，種子只是
+  第一個實例。split key 的選擇規則改為：名為 `seed` 的 int 鍵欄優先（世界群
+  案例），否則第一個 int 鍵欄（訊號表＝time）。
 - 決策人：Galen Chu（實作：Claude，Phase 4 批次）
 - 影響：`manifest.py`（Splits）、`invariants.py`（read_split／check_time_safety）、
   `validate_manifest`

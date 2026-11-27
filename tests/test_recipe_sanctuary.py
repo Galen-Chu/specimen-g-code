@@ -1,4 +1,4 @@
-"""sanctuary_worlds: the first atemporal specimen - seed-ordered splits, golden pin."""
+"""sanctuary_worlds: the first atemporal specimen - integer-ordered splits, golden pin."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def test_worlds_table_follows_the_declared_rules() -> None:
 def test_seed_ordered_split_degenerates_gracefully() -> None:
     """ADR-0001: the split reads the seed column; I1/I3 degenerate to seed order."""
     manifest = parse_manifest((GOLDEN / "manifest.toml").read_text(encoding="utf-8"))
-    assert manifest.splits.method == "seed-ordered"
+    assert manifest.splits.method == "integer-ordered"
     text = (GOLDEN / "worlds.csv").read_text(encoding="utf-8")
     assignment = read_split(text, "seed", manifest.splits)
     assert assignment.train == (0,)  # seed 100

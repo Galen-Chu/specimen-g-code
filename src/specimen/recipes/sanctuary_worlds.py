@@ -6,7 +6,7 @@ scenario TOMLs it lists. The recipe parses each world with ``tomllib`` and
 emits one ``worlds`` table (grain ``world``, one row per world): the group
 identity, each world's composition counts, and its geometry.
 
-No time axis exists anywhere in this domain — the split is ``seed-ordered``
+No time axis exists anywhere in this domain — the split is ``integer-ordered``
 over the world seed (ADR-0001), I1/I3 degenerate to the seed order, and
 every column is knowable with its own artifact (availability 0.0). Assay is
 deferred until a learning question exists for worlds (ADR-0001
@@ -58,7 +58,7 @@ WORLDS_HEADER = (
 )
 CONTRACTS = (
     # Atemporal: every column is knowable with the artifact itself (I2
-    # availability 0.0); the split is seed-ordered (ADR-0001).
+    # availability 0.0); the split is integer-ordered (ADR-0001).
     TableContract(
         name="worlds",
         grain="world",
@@ -81,7 +81,7 @@ CONTRACTS = (
         ),
     ),
 )
-SPLITS = Splits(method="seed-ordered", train_end="100", valid_end="101")
+SPLITS = Splits(method="integer-ordered", train_end="100", valid_end="101")
 
 
 def _fmt(value: float) -> str:

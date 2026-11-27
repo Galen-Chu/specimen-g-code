@@ -52,8 +52,8 @@ def test_read_split_refuses_ambiguous_input() -> None:
 
 
 def test_seed_ordered_splits_read_the_seed_column() -> None:
-    """ADR-0001: seed-ordered splits read the int 'seed' key with the same intervals."""
-    splits = Splits(method="seed-ordered", train_end="100", valid_end="101")
+    """ADR-0001: integer-ordered splits read the int 'seed' key with the same intervals."""
+    splits = Splits(method="integer-ordered", train_end="100", valid_end="101")
     text = "seed,x\n99,a\n100,b\n101,c\n102,d\n"
     assignment = read_split(text, "seed", splits)
     assert assignment.train == (0, 1) and assignment.valid == (2,) and assignment.test == (3,)

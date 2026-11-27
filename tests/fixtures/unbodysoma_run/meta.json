@@ -1,0 +1,1454 @@
+{
+  "created": "2026-11-26T06:55:07+00:00",
+  "unbodysoma": "0.3.0",
+  "python": "3.14.0",
+  "git": {
+    "commit": "1cfc000a8ecd7ac5ea597ada59f4c227fa40b40b",
+    "dirty": true
+  },
+  "base_dt": 0.01,
+  "sample_every": 1.0,
+  "config": {
+    "scenario": "fear_response",
+    "seed": 0,
+    "duration_s": 300.0,
+    "source_sha256": "d219b5a77cc5536f455fe7430cd54a29e12fccd2dd960afb5d31af903d600a32",
+    "source": "# A threat appears for 30 s: the organism appraises it, flees and recovers.\n# Same experiment as examples/fear_response.py.\n\n[scenario]\nname = \"fear_response\"\ndescription = \"Acute threat at 60-90 s and recovery\"\nduration_s = 300\nseed = 0\n\n[organism]\npreset = \"minimal\"\n\n[[events]]\nstart = 60\nend = 90\nkey = \"world.threat\"\nvalue = 0.9\n\n[observe]\nrecord_every = 1.0\n"
+  },
+  "modules": [
+    {
+      "name": "world.scripted",
+      "class": "unbodysoma.world.scenario.ScriptedWorld",
+      "rate_hz": 10.0,
+      "reads": [],
+      "writes": [
+        "world.ambient_temperature",
+        "world.damage",
+        "world.food_available",
+        "world.in_shelter",
+        "world.shelter_known",
+        "world.stimulus",
+        "world.stimulus_b",
+        "world.threat",
+        "world.water_available"
+      ],
+      "params": {
+        "events": [
+          {
+            "start": 60.0,
+            "end": 90.0,
+            "key": "world.threat",
+            "value": 0.9
+          }
+        ],
+        "signals": [
+          "world.threat",
+          "world.food_available",
+          "world.water_available",
+          "world.in_shelter",
+          "world.shelter_known",
+          "world.ambient_temperature",
+          "world.damage",
+          "world.stimulus",
+          "world.stimulus_b"
+        ],
+        "baselines": {
+          "world.ambient_temperature": 22.0
+        }
+      }
+    },
+    {
+      "name": "world.food",
+      "class": "unbodysoma.world.food.FoodSource",
+      "rate_hz": 10.0,
+      "reads": [
+        "world.food_available",
+        "motor.eating"
+      ],
+      "writes": [
+        "world.food_intake"
+      ],
+      "params": {
+        "intake_rate": 0.0003
+      }
+    },
+    {
+      "name": "world.water",
+      "class": "unbodysoma.world.water.WaterIntake",
+      "rate_hz": 10.0,
+      "reads": [
+        "world.water_available",
+        "motor.drinking"
+      ],
+      "writes": [
+        "world.water_intake"
+      ],
+      "params": {
+        "intake_rate": 0.002
+      }
+    },
+    {
+      "name": "interface.exteroception",
+      "class": "unbodysoma.interface.exteroception.Exteroception",
+      "rate_hz": 20.0,
+      "reads": [
+        "world.threat",
+        "world.food_available",
+        "world.water_available",
+        "world.in_shelter",
+        "world.shelter_known"
+      ],
+      "writes": [
+        "extero.threat",
+        "extero.food",
+        "extero.water",
+        "extero.in_shelter",
+        "extero.shelter_known"
+      ],
+      "params": {
+        "channels": [
+          "threat",
+          "food",
+          "water",
+          "in_shelter",
+          "shelter_known"
+        ],
+        "noise": 0.02,
+        "seed": 0
+      }
+    },
+    {
+      "name": "interface.interoception",
+      "class": "unbodysoma.interface.interoception.Interoception",
+      "rate_hz": 10.0,
+      "reads": [
+        "soma.cardio.heart_rate",
+        "soma.metabolism.energy_reserve",
+        "soma.metabolism.glucose",
+        "soma.metabolism.insulin",
+        "soma.fluid.hydration",
+        "soma.thermo.core_temperature",
+        "soma.sleep.pressure",
+        "soma.circadian.drive",
+        "soma.nociception.pain"
+      ],
+      "writes": [
+        "intero.cardiac_arousal",
+        "intero.energy_deficit",
+        "intero.water_deficit",
+        "intero.thermal",
+        "intero.sleep_pressure",
+        "intero.circadian",
+        "intero.pain"
+      ],
+      "params": {
+        "resting_bpm": 60.0,
+        "bpm_span": 100.0,
+        "comfortable_core": 37.0,
+        "thermal_span": 2.0,
+        "satiety_basal": 8.0,
+        "satiety_span": 20.0,
+        "w_satiety": 0.4,
+        "dip_level": 85.0,
+        "dip_span": 20.0,
+        "w_dip": 0.5,
+        "noise": 0.01,
+        "seed": 1
+      }
+    },
+    {
+      "name": "soma.circadian",
+      "class": "unbodysoma.soma.circadian.Circadian",
+      "rate_hz": 1.0,
+      "reads": [],
+      "writes": [
+        "soma.circadian.drive",
+        "soma.circadian.clock_hour"
+      ],
+      "params": {
+        "period_h": 24.0,
+        "peak_hour": 19.0,
+        "start_hour": 8.0
+      }
+    },
+    {
+      "name": "soma.sleep",
+      "class": "unbodysoma.soma.sleep.SleepHomeostat",
+      "rate_hz": 1.0,
+      "reads": [
+        "motor.sleeping"
+      ],
+      "writes": [
+        "soma.sleep.pressure"
+      ],
+      "params": {
+        "tau_wake_h": 18.2,
+        "tau_sleep_h": 4.2,
+        "initial_pressure": 0.14
+      }
+    },
+    {
+      "name": "soma.cardio",
+      "class": "unbodysoma.soma.cardio.Cardio",
+      "rate_hz": 10.0,
+      "reads": [
+        "soma.endocrine.adrenaline",
+        "motor.exertion",
+        "motor.sleeping",
+        "soma.respiration.rate"
+      ],
+      "writes": [
+        "soma.cardio.heart_rate"
+      ],
+      "params": {
+        "resting_bpm": 65.0,
+        "age_years": 35.0,
+        "k_adrenaline": 40.0,
+        "k_exertion": 70.0,
+        "tau": 5.0,
+        "fast_exertion_share": 0.25,
+        "exertion_tau_rise": 40.0,
+        "exertion_tau_fall": 60.0,
+        "sleep_bpm_drop": 8.0,
+        "rsa_amplitude": 3.0,
+        "rsa_rest_rate": 14.0,
+        "lf_sigma": 2.0,
+        "lf_tau": 10.0,
+        "hrv_suppression": 0.8,
+        "seed": 2
+      }
+    },
+    {
+      "name": "soma.endocrine",
+      "class": "unbodysoma.soma.endocrine.Endocrine",
+      "rate_hz": 2.0,
+      "reads": [
+        "psyche.appraisal.threat",
+        "soma.circadian.clock_hour",
+        "motor.sleeping"
+      ],
+      "writes": [
+        "soma.endocrine.adrenaline",
+        "soma.endocrine.cortisol"
+      ],
+      "params": {
+        "cortisol_baseline": 0.2,
+        "cortisol_circadian_amplitude": 0.1,
+        "cortisol_peak_hour": 8.0,
+        "car_amplitude": 0.5,
+        "car_tau": 1500.0,
+        "acth_gain": 0.45,
+        "acth_tau_rise": 360.0,
+        "acth_tau_fall": 1500.0,
+        "cortisol_feedback": 4.0,
+        "adrenaline_tau_rise": 3.0,
+        "adrenaline_tau_fall": 40.0,
+        "cortisol_tau_rise": 600.0,
+        "cortisol_tau_fall": 3000.0
+      }
+    },
+    {
+      "name": "soma.metabolism",
+      "class": "unbodysoma.soma.metabolism.Metabolism",
+      "rate_hz": 1.0,
+      "reads": [
+        "motor.exertion",
+        "motor.sleeping",
+        "world.food_intake",
+        "soma.endocrine.adrenaline",
+        "soma.thermo.shivering"
+      ],
+      "writes": [
+        "soma.metabolism.energy_reserve",
+        "soma.metabolism.glucose",
+        "soma.metabolism.insulin"
+      ],
+      "params": {
+        "initial_reserve": 0.8,
+        "hours_to_empty_at_rest": 48.0,
+        "exertion_cost": 4.0,
+        "shiver_cost": 3.0,
+        "sleep_metabolic_factor": 0.9,
+        "storage_share": 1.5,
+        "incretin_gain": 6700.0,
+        "glucose_setpoint": 90.0,
+        "glucose_effectiveness": 0.026,
+        "insulin_action_rate": 0.05,
+        "insulin_action_gain": 5e-05,
+        "insulin_basal": 8.0,
+        "insulin_secretion_gain": 0.13,
+        "insulin_threshold": 100.0,
+        "insulin_tau": 420.0,
+        "glucose_volume": 112.0,
+        "gut_glucose_per_reserve": 230000.0,
+        "gut_tau": 2100.0,
+        "adrenaline_glucose_production": 2.5,
+        "glucose_defense_reserve": 0.1
+      }
+    },
+    {
+      "name": "soma.respiration",
+      "class": "unbodysoma.soma.pulmonary.Respiration",
+      "rate_hz": 1.0,
+      "reads": [
+        "motor.exertion",
+        "motor.sleeping",
+        "soma.endocrine.adrenaline"
+      ],
+      "writes": [
+        "soma.respiration.rate",
+        "soma.respiration.minute_ventilation",
+        "soma.respiration.spo2"
+      ],
+      "params": {
+        "resting_rate": 14.0,
+        "exertion_rate_gain": 1.2,
+        "adrenaline_rate_gain": 4.0,
+        "sleep_rate_factor": 0.85,
+        "resting_ventilation": 6.0,
+        "exertion_ventilation_gain": 26.0,
+        "resting_spo2": 97.5,
+        "exertion_spo2_dip": 2.5,
+        "rate_tau": 10.0,
+        "ventilation_tau": 15.0
+      }
+    },
+    {
+      "name": "soma.fluid",
+      "class": "unbodysoma.soma.fluid.FluidBalance",
+      "rate_hz": 1.0,
+      "reads": [
+        "motor.exertion",
+        "motor.sleeping",
+        "soma.thermo.sweating",
+        "world.water_intake"
+      ],
+      "writes": [
+        "soma.fluid.hydration",
+        "soma.fluid.osmolality"
+      ],
+      "params": {
+        "initial_hydration": 0.9,
+        "hours_to_empty_at_rest": 48.0,
+        "exertion_cost": 2.0,
+        "sweat_cost": 6.0,
+        "sleep_loss_factor": 0.8,
+        "osmolality_at_full": 285.0,
+        "osmolality_span": 40.0
+      }
+    },
+    {
+      "name": "soma.thermo",
+      "class": "unbodysoma.soma.thermo.Thermoregulation",
+      "rate_hz": 1.0,
+      "reads": [
+        "world.ambient_temperature",
+        "motor.exertion"
+      ],
+      "writes": [
+        "soma.thermo.core_temperature",
+        "soma.thermo.shivering",
+        "soma.thermo.sweating"
+      ],
+      "params": {
+        "setpoint": 37.0,
+        "initial_temperature": 37.0,
+        "basal_heat": 2.25,
+        "exertion_heat": 2.0,
+        "conductance": 0.15,
+        "shiver_heat": 4.0,
+        "sweat_cooling": 8.0,
+        "shiver_offset": 0.3,
+        "sweat_offset": 0.2,
+        "response_span": 0.8
+      }
+    },
+    {
+      "name": "soma.nociception",
+      "class": "unbodysoma.soma.nociception.Nociception",
+      "rate_hz": 10.0,
+      "reads": [
+        "world.damage"
+      ],
+      "writes": [
+        "soma.nociception.injury",
+        "soma.nociception.sharp",
+        "soma.nociception.burning",
+        "soma.nociception.pain"
+      ],
+      "params": {
+        "injury_gain": 0.03,
+        "tau_heal": 86400.0,
+        "tau_sharp": 1.5,
+        "tau_burning": 25.0,
+        "burning_gain": 2.5,
+        "sensitization_rate": 0.1,
+        "tau_sensitization": 900.0,
+        "max_sensitization": 1.0
+      }
+    },
+    {
+      "name": "soma.neuro",
+      "class": "unbodysoma.soma.neuro.Neuromodulation",
+      "rate_hz": 10.0,
+      "reads": [
+        "intero.energy_deficit",
+        "intero.water_deficit",
+        "intero.thermal",
+        "intero.sleep_pressure",
+        "intero.pain",
+        "intero.cardiac_arousal",
+        "psyche.appraisal.threat",
+        "psyche.conditioning.reward_prediction"
+      ],
+      "writes": [
+        "neuro.dopamine",
+        "neuro.serotonin",
+        "neuro.norepinephrine",
+        "neuro.relief"
+      ],
+      "params": {
+        "w_energy": 0.4,
+        "w_water": 0.3,
+        "w_thermal": 0.15,
+        "w_sleep": 0.15,
+        "tau_error_fast": 10.0,
+        "tau_error_slow": 300.0,
+        "dopamine_baseline": 0.5,
+        "dopamine_gain": 10.0,
+        "tau_dopamine": 1.5,
+        "serotonin_baseline": 0.5,
+        "w_pain_serotonin": 0.8,
+        "w_deficit_serotonin": 0.4,
+        "tau_serotonin": 600.0,
+        "w_cardiac_norepinephrine": 0.6,
+        "tau_norepinephrine": 3.0
+      }
+    },
+    {
+      "name": "psyche.appraisal",
+      "class": "unbodysoma.psyche.appraisal.Appraisal",
+      "rate_hz": 10.0,
+      "reads": [
+        "extero.threat",
+        "neuro.norepinephrine",
+        "psyche.conditioning.threat_expectation",
+        "psyche.attention.share_threat"
+      ],
+      "writes": [
+        "psyche.appraisal.threat"
+      ],
+      "params": {
+        "arousal_bias": 0.5,
+        "w_attention_gain": 0.5,
+        "w_learned_threat": 1.0,
+        "tau": 0.5
+      }
+    },
+    {
+      "name": "psyche.affect",
+      "class": "unbodysoma.psyche.affect.Affect",
+      "rate_hz": 10.0,
+      "reads": [
+        "intero.cardiac_arousal",
+        "intero.pain",
+        "neuro.dopamine",
+        "neuro.serotonin",
+        "psyche.habituation.novelty",
+        "psyche.memory.mood_congruence",
+        "psyche.appraisal.threat",
+        "psyche.drive.hunger",
+        "psyche.drive.thirst",
+        "psyche.drive.thermal_discomfort"
+      ],
+      "writes": [
+        "psyche.affect.valence",
+        "psyche.affect.arousal"
+      ],
+      "params": {
+        "baseline_valence": 0.1,
+        "w_cardiac_arousal": 0.6,
+        "w_threat_arousal": 0.4,
+        "w_threat_valence": 0.9,
+        "w_hunger_valence": 0.5,
+        "w_thirst_valence": 0.5,
+        "w_thermal_valence": 0.4,
+        "w_pain_valence": 1.2,
+        "w_pain_arousal": 0.3,
+        "w_dopamine_valence": 0.1,
+        "w_serotonin_valence": 0.4,
+        "w_novelty_arousal": 0.15,
+        "w_memory_valence": 0.1,
+        "need_saturation": 1.0,
+        "tau": 2.0,
+        "valence_sigma": 0.03,
+        "arousal_sigma": 0.02,
+        "fluctuation_tau": 60.0,
+        "seed": 3
+      }
+    },
+    {
+      "name": "psyche.drives",
+      "class": "unbodysoma.psyche.drives.Drives",
+      "rate_hz": 2.0,
+      "reads": [
+        "intero.energy_deficit",
+        "intero.water_deficit",
+        "intero.thermal",
+        "intero.sleep_pressure",
+        "intero.circadian",
+        "psyche.anticipation.hunger",
+        "motor.sleeping"
+      ],
+      "writes": [
+        "psyche.drive.hunger",
+        "psyche.drive.thirst",
+        "psyche.drive.thermal_discomfort",
+        "psyche.drive.sleepiness"
+      ],
+      "params": {
+        "threshold": 0.2,
+        "span": 0.6,
+        "tau": 30.0,
+        "sleep_hunger_suppression": 0.5,
+        "w_anticipation": 0.6,
+        "thirst_threshold": 0.15,
+        "thirst_span": 0.5,
+        "thermal_deadband": 0.1,
+        "thermal_span": 0.5,
+        "thermal_tau": 60.0,
+        "sleepiness_tau": 300.0,
+        "sleep_onset_pressure": 0.573,
+        "wake_pressure": 0.193,
+        "circadian_amplitude": 0.1
+      }
+    },
+    {
+      "name": "psyche.habituation",
+      "class": "unbodysoma.psyche.habituation.Habituation",
+      "rate_hz": 10.0,
+      "reads": [
+        "world.stimulus"
+      ],
+      "writes": [
+        "psyche.habituation.novelty"
+      ],
+      "params": {
+        "habituation_rate": 0.12,
+        "tau_recovery": 150.0
+      }
+    },
+    {
+      "name": "psyche.conditioning",
+      "class": "unbodysoma.psyche.conditioning.Conditioning",
+      "rate_hz": 10.0,
+      "reads": [
+        "world.stimulus",
+        "world.stimulus_b",
+        "world.damage",
+        "neuro.relief"
+      ],
+      "writes": [
+        "psyche.conditioning.threat_expectation",
+        "psyche.conditioning.reward_prediction",
+        "psyche.conditioning.defense_a",
+        "psyche.conditioning.defense_b"
+      ],
+      "params": {
+        "learn_rate": 0.05,
+        "defense_asymptote": 1.0,
+        "reward_asymptote": 1.0,
+        "tau_deep_rise": 900.0,
+        "tau_deep_decay": 86400.0,
+        "recovery_share": 0.7,
+        "rest_refractory": 120.0,
+        "tau_recovery": 600.0
+      }
+    },
+    {
+      "name": "psyche.instrumental",
+      "class": "unbodysoma.psyche.instrumental.Instrumental",
+      "rate_hz": 10.0,
+      "reads": [
+        "psyche.action.selected_idle",
+        "psyche.action.selected_flee",
+        "psyche.action.selected_eat",
+        "psyche.action.selected_explore",
+        "psyche.action.selected_drink",
+        "psyche.action.selected_seek_water",
+        "psyche.action.selected_seek_shelter",
+        "psyche.action.selected_sleep",
+        "neuro.relief",
+        "intero.pain"
+      ],
+      "writes": [
+        "psyche.instrumental.value_idle",
+        "psyche.instrumental.value_flee",
+        "psyche.instrumental.value_eat",
+        "psyche.instrumental.value_explore",
+        "psyche.instrumental.value_drink",
+        "psyche.instrumental.value_seek_water",
+        "psyche.instrumental.value_seek_shelter",
+        "psyche.instrumental.value_sleep"
+      ],
+      "params": {
+        "learn_rate": 0.01,
+        "tau_eligibility": 20.0,
+        "tau_forgetting": 1800.0,
+        "w_pain": 1.0,
+        "tau_pain_trace": 5.0
+      }
+    },
+    {
+      "name": "psyche.memory",
+      "class": "unbodysoma.psyche.memory.EpisodicMemory",
+      "rate_hz": 10.0,
+      "reads": [
+        "psyche.affect.valence",
+        "psyche.affect.arousal",
+        "intero.pain"
+      ],
+      "writes": [
+        "psyche.memory.episodes",
+        "psyche.memory.mood_congruence"
+      ],
+      "params": {
+        "capture_threshold": 0.55,
+        "min_gap": 300.0,
+        "tau_memory": 172800.0,
+        "max_episodes": 64
+      }
+    },
+    {
+      "name": "psyche.anticipation",
+      "class": "unbodysoma.psyche.anticipation.Anticipation",
+      "rate_hz": 1.0,
+      "reads": [
+        "psyche.drive.hunger",
+        "intero.pain",
+        "soma.circadian.clock_hour"
+      ],
+      "writes": [
+        "psyche.anticipation.hunger",
+        "psyche.anticipation.threat"
+      ],
+      "params": {
+        "tau_exposure": 5400.0,
+        "lead_hours": 1.0
+      }
+    },
+    {
+      "name": "psyche.attention",
+      "class": "unbodysoma.psyche.attention.Attention",
+      "rate_hz": 10.0,
+      "reads": [
+        "psyche.appraisal.threat",
+        "intero.pain",
+        "psyche.drive.hunger",
+        "psyche.drive.thirst",
+        "psyche.drive.thermal_discomfort",
+        "psyche.drive.sleepiness"
+      ],
+      "writes": [
+        "psyche.attention.share_threat",
+        "psyche.attention.share_pain",
+        "psyche.attention.share_hunger",
+        "psyche.attention.share_thirst",
+        "psyche.attention.share_thermal",
+        "psyche.attention.share_sleepiness",
+        "psyche.attention.focus_share"
+      ],
+      "params": {
+        "temperature": 0.1,
+        "persistence": 0.5,
+        "tau": 1.0
+      }
+    },
+    {
+      "name": "psyche.action",
+      "class": "unbodysoma.psyche.action.ActionSelection",
+      "rate_hz": 2.0,
+      "reads": [
+        "psyche.appraisal.threat",
+        "psyche.drive.hunger",
+        "psyche.drive.thirst",
+        "psyche.drive.thermal_discomfort",
+        "psyche.drive.sleepiness",
+        "intero.pain",
+        "psyche.anticipation.threat",
+        "psyche.attention.focus_share",
+        "psyche.instrumental.value_idle",
+        "psyche.instrumental.value_flee",
+        "psyche.instrumental.value_eat",
+        "psyche.instrumental.value_explore",
+        "psyche.instrumental.value_drink",
+        "psyche.instrumental.value_seek_water",
+        "psyche.instrumental.value_seek_shelter",
+        "psyche.instrumental.value_sleep",
+        "extero.food",
+        "extero.water",
+        "extero.in_shelter",
+        "extero.shelter_known"
+      ],
+      "writes": [
+        "motor.exertion",
+        "motor.eating",
+        "motor.drinking",
+        "motor.sleeping",
+        "psyche.action.p_idle",
+        "psyche.action.p_flee",
+        "psyche.action.p_eat",
+        "psyche.action.p_explore",
+        "psyche.action.p_drink",
+        "psyche.action.p_seek_water",
+        "psyche.action.p_seek_shelter",
+        "psyche.action.p_sleep",
+        "psyche.action.selected_idle",
+        "psyche.action.selected_flee",
+        "psyche.action.selected_eat",
+        "psyche.action.selected_explore",
+        "psyche.action.selected_drink",
+        "psyche.action.selected_seek_water",
+        "psyche.action.selected_seek_shelter",
+        "psyche.action.selected_sleep"
+      ],
+      "params": {
+        "temperature": 0.015,
+        "stickiness": 0.1,
+        "reconsideration_rate": 0.016666666666666666,
+        "k_flee": 2.5,
+        "flee_threshold": 0.4,
+        "k_flee_pain": 1.0,
+        "w_shelter_anticipation": 1.0,
+        "attention_sharpen": 0.3,
+        "w_instrumental": 0.5,
+        "k_eat": 2.0,
+        "eat_threshold": 0.35,
+        "eat_commitment": 0.4,
+        "k_explore": 1.5,
+        "explore_threshold": 0.4,
+        "k_drink": 2.0,
+        "drink_threshold": 0.3,
+        "drink_commitment": 0.4,
+        "k_seek_water": 1.5,
+        "seek_water_threshold": 0.35,
+        "k_shelter": 1.5,
+        "shelter_threshold": 0.3,
+        "k_home": 4.0,
+        "k_shelter_pain": 1.0,
+        "home_onset": 0.8,
+        "outside_penalty": 0.5,
+        "k_sleep": 8.0,
+        "sleep_onset": 0.95,
+        "sleep_depth": 5.0,
+        "sleep_cap": 1.0,
+        "resume_window": 1800.0,
+        "unfinished_sleep": 0.05,
+        "food_seen": 0.5,
+        "water_seen": 0.5,
+        "shelter_seen": 0.5,
+        "flee_exertion": 0.8,
+        "explore_exertion": 0.3,
+        "tau": 1.0,
+        "seed": 4
+      }
+    }
+  ],
+  "signals": {
+    "extero.food": {
+      "key": "extero.food",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Sensed food within reach"
+    },
+    "extero.in_shelter": {
+      "key": "extero.in_shelter",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Sensed being inside a shelter"
+    },
+    "extero.shelter_known": {
+      "key": "extero.shelter_known",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Knowing a shelter exists"
+    },
+    "extero.threat": {
+      "key": "extero.threat",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Sensed threat cue"
+    },
+    "extero.water": {
+      "key": "extero.water",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Sensed water within reach"
+    },
+    "intero.cardiac_arousal": {
+      "key": "intero.cardiac_arousal",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt cardiac activation"
+    },
+    "intero.circadian": {
+      "key": "intero.circadian",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Felt circadian alerting signal"
+    },
+    "intero.energy_deficit": {
+      "key": "intero.energy_deficit",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt shortage of energy (store minus satiety plus glucose dip)"
+    },
+    "intero.pain": {
+      "key": "intero.pain",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt pain"
+    },
+    "intero.sleep_pressure": {
+      "key": "intero.sleep_pressure",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt tiredness (homeostatic sleep pressure)"
+    },
+    "intero.thermal": {
+      "key": "intero.thermal",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Felt body temperature (- cold, + hot)"
+    },
+    "intero.water_deficit": {
+      "key": "intero.water_deficit",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt shortage of water"
+    },
+    "motor.drinking": {
+      "key": "motor.drinking",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Drinking behaviour (1 = drinking)"
+    },
+    "motor.eating": {
+      "key": "motor.eating",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Eating behaviour (1 = eating)"
+    },
+    "motor.exertion": {
+      "key": "motor.exertion",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Physical effort being exerted"
+    },
+    "motor.sleeping": {
+      "key": "motor.sleeping",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while asleep"
+    },
+    "neuro.dopamine": {
+      "key": "neuro.dopamine",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Dopamine: phasic reward from homeostatic relief"
+    },
+    "neuro.norepinephrine": {
+      "key": "neuro.norepinephrine",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Norepinephrine: vigilance"
+    },
+    "neuro.relief": {
+      "key": "neuro.relief",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Relief: homeostatic error falling below its slow baseline"
+    },
+    "neuro.serotonin": {
+      "key": "neuro.serotonin",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Serotonin: slow mood tone"
+    },
+    "psyche.action.p_drink": {
+      "key": "psyche.action.p_drink",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing drink"
+    },
+    "psyche.action.p_eat": {
+      "key": "psyche.action.p_eat",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing eat"
+    },
+    "psyche.action.p_explore": {
+      "key": "psyche.action.p_explore",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing explore"
+    },
+    "psyche.action.p_flee": {
+      "key": "psyche.action.p_flee",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing flee"
+    },
+    "psyche.action.p_idle": {
+      "key": "psyche.action.p_idle",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing idle"
+    },
+    "psyche.action.p_seek_shelter": {
+      "key": "psyche.action.p_seek_shelter",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing seek_shelter"
+    },
+    "psyche.action.p_seek_water": {
+      "key": "psyche.action.p_seek_water",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing seek_water"
+    },
+    "psyche.action.p_sleep": {
+      "key": "psyche.action.p_sleep",
+      "unit": "probability",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Probability of choosing sleep"
+    },
+    "psyche.action.selected_drink": {
+      "key": "psyche.action.selected_drink",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while drink is chosen"
+    },
+    "psyche.action.selected_eat": {
+      "key": "psyche.action.selected_eat",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while eat is chosen"
+    },
+    "psyche.action.selected_explore": {
+      "key": "psyche.action.selected_explore",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while explore is chosen"
+    },
+    "psyche.action.selected_flee": {
+      "key": "psyche.action.selected_flee",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while flee is chosen"
+    },
+    "psyche.action.selected_idle": {
+      "key": "psyche.action.selected_idle",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while idle is chosen"
+    },
+    "psyche.action.selected_seek_shelter": {
+      "key": "psyche.action.selected_seek_shelter",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while seek_shelter is chosen"
+    },
+    "psyche.action.selected_seek_water": {
+      "key": "psyche.action.selected_seek_water",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while seek_water is chosen"
+    },
+    "psyche.action.selected_sleep": {
+      "key": "psyche.action.selected_sleep",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 while sleep is chosen"
+    },
+    "psyche.affect.arousal": {
+      "key": "psyche.affect.arousal",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Core affect: activation"
+    },
+    "psyche.affect.valence": {
+      "key": "psyche.affect.valence",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Core affect: pleasant (+) vs unpleasant (-)"
+    },
+    "psyche.anticipation.hunger": {
+      "key": "psyche.anticipation.hunger",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Circadian-anticipated hunger for the coming hour"
+    },
+    "psyche.anticipation.threat": {
+      "key": "psyche.anticipation.threat",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Circadian-anticipated pain for the coming hour"
+    },
+    "psyche.appraisal.threat": {
+      "key": "psyche.appraisal.threat",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Appraised threat"
+    },
+    "psyche.attention.focus_share": {
+      "key": "psyche.attention.focus_share",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by the current focus"
+    },
+    "psyche.attention.share_hunger": {
+      "key": "psyche.attention.share_hunger",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by hunger"
+    },
+    "psyche.attention.share_pain": {
+      "key": "psyche.attention.share_pain",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by pain"
+    },
+    "psyche.attention.share_sleepiness": {
+      "key": "psyche.attention.share_sleepiness",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by sleepiness"
+    },
+    "psyche.attention.share_thermal": {
+      "key": "psyche.attention.share_thermal",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by thermal"
+    },
+    "psyche.attention.share_thirst": {
+      "key": "psyche.attention.share_thirst",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by thirst"
+    },
+    "psyche.attention.share_threat": {
+      "key": "psyche.attention.share_threat",
+      "unit": "share",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Attention held by threat"
+    },
+    "psyche.conditioning.defense_a": {
+      "key": "psyche.conditioning.defense_a",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Defensive association of cue A"
+    },
+    "psyche.conditioning.defense_b": {
+      "key": "psyche.conditioning.defense_b",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Defensive association of cue B"
+    },
+    "psyche.conditioning.reward_prediction": {
+      "key": "psyche.conditioning.reward_prediction",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Relief predicted by present cues"
+    },
+    "psyche.conditioning.threat_expectation": {
+      "key": "psyche.conditioning.threat_expectation",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Learned threat predicted by present cues"
+    },
+    "psyche.drive.hunger": {
+      "key": "psyche.drive.hunger",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt urgency of eating (incl. anticipated)"
+    },
+    "psyche.drive.sleepiness": {
+      "key": "psyche.drive.sleepiness",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Felt need for sleep (1 = sleep onset, 0 = wake point)"
+    },
+    "psyche.drive.thermal_discomfort": {
+      "key": "psyche.drive.thermal_discomfort",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt cold or heat"
+    },
+    "psyche.drive.thirst": {
+      "key": "psyche.drive.thirst",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt urgency of drinking"
+    },
+    "psyche.habituation.novelty": {
+      "key": "psyche.habituation.novelty",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt novelty of the current stimulus"
+    },
+    "psyche.instrumental.value_drink": {
+      "key": "psyche.instrumental.value_drink",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of drink"
+    },
+    "psyche.instrumental.value_eat": {
+      "key": "psyche.instrumental.value_eat",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of eat"
+    },
+    "psyche.instrumental.value_explore": {
+      "key": "psyche.instrumental.value_explore",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of explore"
+    },
+    "psyche.instrumental.value_flee": {
+      "key": "psyche.instrumental.value_flee",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of flee"
+    },
+    "psyche.instrumental.value_idle": {
+      "key": "psyche.instrumental.value_idle",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of idle"
+    },
+    "psyche.instrumental.value_seek_shelter": {
+      "key": "psyche.instrumental.value_seek_shelter",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of seek_shelter"
+    },
+    "psyche.instrumental.value_seek_water": {
+      "key": "psyche.instrumental.value_seek_water",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of seek_water"
+    },
+    "psyche.instrumental.value_sleep": {
+      "key": "psyche.instrumental.value_sleep",
+      "unit": "utility",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Learned value of sleep"
+    },
+    "psyche.memory.episodes": {
+      "key": "psyche.memory.episodes",
+      "unit": "count",
+      "lo": 0.0,
+      "hi": 64.0,
+      "description": "Episodes currently held"
+    },
+    "psyche.memory.mood_congruence": {
+      "key": "psyche.memory.mood_congruence",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Signed reactivation of stored episodes by the current context (negative memories pull down)"
+    },
+    "soma.cardio.heart_rate": {
+      "key": "soma.cardio.heart_rate",
+      "unit": "bpm",
+      "lo": 0.0,
+      "hi": 300.0,
+      "description": "Heart rate"
+    },
+    "soma.circadian.clock_hour": {
+      "key": "soma.circadian.clock_hour",
+      "unit": "h",
+      "lo": 0.0,
+      "hi": 24.0,
+      "description": "Local clock time"
+    },
+    "soma.circadian.drive": {
+      "key": "soma.circadian.drive",
+      "unit": "normalized",
+      "lo": -1.0,
+      "hi": 1.0,
+      "description": "Circadian alerting signal (+1 at its daily peak)"
+    },
+    "soma.endocrine.adrenaline": {
+      "key": "soma.endocrine.adrenaline",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Circulating adrenaline (sympathetic arousal)"
+    },
+    "soma.endocrine.cortisol": {
+      "key": "soma.endocrine.cortisol",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Circulating cortisol (HPA axis)"
+    },
+    "soma.fluid.hydration": {
+      "key": "soma.fluid.hydration",
+      "unit": "fraction",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Body-water reserve (1 = well hydrated)"
+    },
+    "soma.fluid.osmolality": {
+      "key": "soma.fluid.osmolality",
+      "unit": "mOsm/kg",
+      "lo": 250.0,
+      "hi": 350.0,
+      "description": "Plasma osmolality"
+    },
+    "soma.metabolism.energy_reserve": {
+      "key": "soma.metabolism.energy_reserve",
+      "unit": "fraction",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Net glucose balance (1 = full store)"
+    },
+    "soma.metabolism.glucose": {
+      "key": "soma.metabolism.glucose",
+      "unit": "mg/dL",
+      "lo": 0.0,
+      "hi": 600.0,
+      "description": "Blood glucose"
+    },
+    "soma.metabolism.insulin": {
+      "key": "soma.metabolism.insulin",
+      "unit": "μU/mL",
+      "lo": 0.0,
+      "hi": 400.0,
+      "description": "Plasma insulin"
+    },
+    "soma.nociception.burning": {
+      "key": "soma.nociception.burning",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Second pain: slow, tracks tissue state"
+    },
+    "soma.nociception.injury": {
+      "key": "soma.nociception.injury",
+      "unit": "fraction",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Tissue injury (1 = maximally injured)"
+    },
+    "soma.nociception.pain": {
+      "key": "soma.nociception.pain",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Felt pain intensity (sensitized)"
+    },
+    "soma.nociception.sharp": {
+      "key": "soma.nociception.sharp",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "First pain: fast, tracks the stimulus"
+    },
+    "soma.respiration.minute_ventilation": {
+      "key": "soma.respiration.minute_ventilation",
+      "unit": "L/min",
+      "lo": 2.0,
+      "hi": 120.0,
+      "description": "Minute ventilation"
+    },
+    "soma.respiration.rate": {
+      "key": "soma.respiration.rate",
+      "unit": "breaths/min",
+      "lo": 4.0,
+      "hi": 60.0,
+      "description": "Breathing rate"
+    },
+    "soma.respiration.spo2": {
+      "key": "soma.respiration.spo2",
+      "unit": "%",
+      "lo": 70.0,
+      "hi": 100.0,
+      "description": "Arterial oxygen saturation"
+    },
+    "soma.sleep.pressure": {
+      "key": "soma.sleep.pressure",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Homeostatic sleep pressure (process S)"
+    },
+    "soma.thermo.core_temperature": {
+      "key": "soma.thermo.core_temperature",
+      "unit": "°C",
+      "lo": 30.0,
+      "hi": 45.0,
+      "description": "Core body temperature"
+    },
+    "soma.thermo.shivering": {
+      "key": "soma.thermo.shivering",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Shivering intensity (heat production, energy cost)"
+    },
+    "soma.thermo.sweating": {
+      "key": "soma.thermo.sweating",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Sweating intensity (heat loss, water cost)"
+    },
+    "world.ambient_temperature": {
+      "key": "world.ambient_temperature",
+      "unit": "°C",
+      "lo": -60.0,
+      "hi": 60.0,
+      "description": "Temperature where the organism is"
+    },
+    "world.damage": {
+      "key": "world.damage",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Nociceptive intensity at the organism (tissue-damaging contact)"
+    },
+    "world.food_available": {
+      "key": "world.food_available",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Food within reach (1 = plenty)"
+    },
+    "world.food_intake": {
+      "key": "world.food_intake",
+      "unit": "fraction/s",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Energy entering the body, as reserve fraction per second"
+    },
+    "world.in_shelter": {
+      "key": "world.in_shelter",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 inside a shelter"
+    },
+    "world.shelter_known": {
+      "key": "world.shelter_known",
+      "unit": "indicator",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "1 if the world has a shelter"
+    },
+    "world.stimulus": {
+      "key": "world.stimulus",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Cue A: innocuous stimulus intensity (a tap, a noise, a light)"
+    },
+    "world.stimulus_b": {
+      "key": "world.stimulus_b",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Cue B: a second innocuous stimulus channel"
+    },
+    "world.threat": {
+      "key": "world.threat",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Objective threat present in the environment"
+    },
+    "world.water_available": {
+      "key": "world.water_available",
+      "unit": "normalized",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Water within reach"
+    },
+    "world.water_intake": {
+      "key": "world.water_intake",
+      "unit": "fraction/s",
+      "lo": 0.0,
+      "hi": 1.0,
+      "description": "Water entering the body, as hydration fraction per second"
+    }
+  },
+  "end_time": 300.0,
+  "ticks": 30000
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "specimen-g-code"
-version = "0.3.0"
+version = "0.5.0"
 description = "Specimen preparation pipeline — raw data becomes evidence through registered, leakage-safe, bit-reproducible preparation"
 readme = "README.md"
 requires-python = ">=3.11"

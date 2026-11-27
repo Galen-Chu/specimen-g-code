@@ -1,0 +1,333 @@
+[specimen]
+name = "unbodysoma-signals-s0"
+version = 1
+seed = 0
+
+[recipe]
+module = "specimen.recipes.unbodysoma_signals"
+steps = ["parse_meta", "parse_signals_csv", "time_seconds", "drop_incomplete", "run_identity", "sort_by_time"]
+source_sha256 = "75ecec958fe8292e395da70524141a97d72bc214a4179f3cc5aebeb286f9e6d0"
+
+[[recipe.inputs]]
+path = "signals.csv"
+sha256 = "dee87a0278c85c62f4df40dbc88fd4d0369efa7de55a93a5753cf60726e18fc5"
+
+[[recipe.inputs]]
+path = "meta.json"
+sha256 = "031a181c1263202cf6146c3112b9f59dca59cb2236acfdc19e7ac8ccae08485e"
+
+[splits]
+method = "integer-ordered"
+train_end = "200"
+valid_end = "250"
+
+[[outputs]]
+name = "signals"
+grain = "signal"
+file = "signals.csv"
+sha256 = "e06fdd9da11d80148ccf9ec90e7970f8f8b1158413829287ed846a0da7f10879"
+rows = 300
+
+[contracts.signals]
+grain = "signal"
+key = ["time"]
+[contracts.signals.columns."extero.food"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."extero.in_shelter"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."extero.shelter_known"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."extero.threat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."extero.water"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.cardiac_arousal"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.circadian"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.energy_deficit"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.pain"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.sleep_pressure"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.thermal"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."intero.water_deficit"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."motor.drinking"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."motor.eating"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."motor.exertion"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."motor.sleeping"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."neuro.dopamine"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."neuro.norepinephrine"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."neuro.relief"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."neuro.serotonin"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_drink"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_eat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_explore"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_flee"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_idle"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_seek_shelter"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_seek_water"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.p_sleep"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_drink"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_eat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_explore"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_flee"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_idle"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_seek_shelter"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_seek_water"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.action.selected_sleep"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.affect.arousal"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.affect.valence"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.anticipation.hunger"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.anticipation.threat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.appraisal.threat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.focus_share"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_hunger"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_pain"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_sleepiness"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_thermal"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_thirst"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.attention.share_threat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.conditioning.defense_a"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.conditioning.defense_b"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.conditioning.reward_prediction"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.conditioning.threat_expectation"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.drive.hunger"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.drive.sleepiness"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.drive.thermal_discomfort"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.drive.thirst"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.habituation.novelty"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_drink"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_eat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_explore"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_flee"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_idle"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_seek_shelter"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_seek_water"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.instrumental.value_sleep"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.memory.episodes"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."psyche.memory.mood_congruence"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.cardio.heart_rate"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.circadian.clock_hour"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.circadian.drive"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.endocrine.adrenaline"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.endocrine.cortisol"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.fluid.hydration"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.fluid.osmolality"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.metabolism.energy_reserve"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.metabolism.glucose"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.metabolism.insulin"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.nociception.burning"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.nociception.injury"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.nociception.pain"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.nociception.sharp"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.respiration.minute_ventilation"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.respiration.rate"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.respiration.spo2"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.sleep.pressure"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.thermo.core_temperature"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.thermo.shivering"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."soma.thermo.sweating"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns.time]
+type = "int"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.ambient_temperature"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.damage"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.food_available"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.food_intake"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.in_shelter"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.shelter_known"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.stimulus"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.stimulus_b"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.threat"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.water_available"]
+type = "float"
+availability_lag_days = 0.0
+[contracts.signals.columns."world.water_intake"]
+type = "float"
+availability_lag_days = 0.0

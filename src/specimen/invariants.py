@@ -49,8 +49,8 @@ class SplitAssignment:
 
 
 def _boundaries(splits: Splits) -> tuple[date, date]:
-    if splits.method == "seed-ordered":
-        raise ValueError(f"seed-ordered splits (ADR-0001) split on the seed column, not dates: {splits!r}")
+    if splits.method == "integer-ordered":
+        raise ValueError(f"integer-ordered splits (ADR-0001) split on the seed column, not dates: {splits!r}")
     train_end = parse_date(splits.train_end)
     valid_end = parse_date(splits.valid_end)
     if train_end is None or valid_end is None or train_end >= valid_end:
@@ -59,28 +59,28 @@ def _boundaries(splits: Splits) -> tuple[date, date]:
 
 
 def _seed_boundaries(splits: Splits) -> tuple[int, int]:
-    if splits.method != "seed-ordered":
+    if splits.method != "integer-ordered":
         raise ValueError(f"time-ordered splits split on dates, not seeds: {splits!r}")
     try:
         train_end, valid_end = int(splits.train_end), int(splits.valid_end)
     except ValueError:
         raise ValueError(
-            f"seed-ordered boundaries must be integer seeds with train_end < valid_end, got {splits!r}"
+            f"integer-ordered boundaries must be integer seeds with train_end < valid_end, got {splits!r}"
         ) from None
     if train_end >= valid_end:
-        raise ValueError(f"seed-ordered boundaries must be integers with train_end < valid_end, got {splits!r}")
+        raise ValueError(f"integer-ordered boundaries must be integers with train_end < valid_end, got {splits!r}")
     return train_end, valid_end
 
 
 def split_column(contract: TableContract, method: str) -> str:
     """The key column a split reads: the date key for time-ordered; for
-    seed-ordered (ADR-0001) the int key named ``seed`` — else the first int
+    integer-ordered (ADR-0001) the int key named ``seed`` — else the first int
     key. Refuses when the contract lacks a usable one."""
-    wanted = "int" if method == "seed-ordered" else "date"
+    wanted = "int" if method == "integer-ordered" else "date"
     candidates = [column.name for column in contract.columns if column.name in contract.key and column.type == wanted]
     if not candidates:
         raise ValueError(f"contract {contract.name!r}: no key column of type {wanted!r} to split on")
-    if method == "seed-ordered" and "seed" in candidates:
+    if method == "integer-ordered" and "seed" in candidates:
         return "seed"
     return candidates[0]
 
@@ -89,7 +89,7 @@ def read_split(table_text: str, date_column: str, splits: Splits) -> SplitAssign
     """Assign every data row of a CSV table to a segment by the sealed boundaries.
 
     ``date_column`` is the column the split reads — the date key for
-    ``time-ordered`` splits, the seed key for ``seed-ordered`` (ADR-0001).
+    ``time-ordered`` splits, the seed key for ``integer-ordered`` (ADR-0001).
     train: value <= train_end; valid: train_end < value <= valid_end;
     test: value > valid_end. Raises on malformed values, a missing column
     or invalid boundaries — the reader refuses ambiguous input rather than
@@ -97,7 +97,7 @@ def read_split(table_text: str, date_column: str, splits: Splits) -> SplitAssign
     """
     train_end: Any
     valid_end: Any
-    if splits.method == "seed-ordered":
+    if splits.method == "integer-ordered":
         train_end, valid_end = _seed_boundaries(splits)
     else:
         train_end, valid_end = _boundaries(splits)
@@ -131,9 +131,9 @@ def _parse_int(value: str) -> int | None:
 
 
 def _parse_split_value(splits: Splits, value: str) -> Any:
-    """Parse one split value per the method: an int seed for seed-ordered
+    """Parse one split value per the method: an int seed for integer-ordered
     (ADR-0001), an ISO date for time-ordered. Raises on malformed values."""
-    if splits.method == "seed-ordered":
+    if splits.method == "integer-ordered":
         number = _parse_int(value)
         if number is None:
             raise ValueError(f"{value!r} is not a valid integer seed")
@@ -154,7 +154,7 @@ def check_time_safety(assignment: SplitAssignment, splits: Splits) -> list[str]:
     """I1 gate: a labeling must respect the sealed boundaries in declared order.
 
     For ``time-ordered`` every train row <= train_end (dates); for
-    ``seed-ordered`` (ADR-0001) the same intervals over the seed column.
+    ``integer-ordered`` (ADR-0001) the same intervals over the seed column.
     An assignment produced by ``read_split`` passes trivially; the gate
     exists for labelings that came from anywhere else. Empty list = pass.
     """
@@ -162,7 +162,7 @@ def check_time_safety(assignment: SplitAssignment, splits: Splits) -> list[str]:
     train_end: Any
     valid_end: Any
     try:
-        if splits.method == "seed-ordered":
+        if splits.method == "integer-ordered":
             train_end, valid_end = _seed_boundaries(splits)
         else:
             train_end, valid_end = _boundaries(splits)

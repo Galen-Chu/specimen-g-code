@@ -42,7 +42,7 @@ class RecipeSpec:
     run: RecipeFn
 
 
-from . import demo_vitals, sanctuary_worlds, stock_1101  # noqa: E402 - registry assembled after the spec type
+from . import demo_vitals, sanctuary_worlds, stock_1101, unbodysoma_signals  # noqa: E402 - registry assembled after the spec type
 
 REGISTRY: dict[str, RecipeSpec] = {
     "demo_vitals": RecipeSpec(
@@ -74,5 +74,15 @@ REGISTRY: dict[str, RecipeSpec] = {
         contracts=stock_1101.CONTRACTS,
         splits=stock_1101.SPLITS,
         run=stock_1101.run,
+    ),
+    "unbodysoma_signals": RecipeSpec(
+        name="unbodysoma_signals",
+        module="specimen.recipes.unbodysoma_signals",
+        source_sha256=hash_module(unbodysoma_signals),
+        steps=unbodysoma_signals.STEPS,
+        inputs=unbodysoma_signals.INPUTS,
+        contracts=unbodysoma_signals.CONTRACTS,
+        splits=unbodysoma_signals.SPLITS,
+        run=unbodysoma_signals.run,
     ),
 }
