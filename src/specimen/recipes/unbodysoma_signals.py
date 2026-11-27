@@ -46,23 +46,58 @@ STEPS = (
 INPUTS = ("signals.csv", "meta.json")
 SPLITS = Splits(method="integer-ordered", train_end="200", valid_end="250")
 
+# The pinned run's 100-channel header, embedded as the contract (the fixture
+# is registry-pinned, so this header is stable). Channels carry no range
+# limits in v1: several are signed (circadian, valence) and the physiological
+# envelopes are not yet documented; types and availability are the v1
+# contract. Embedded as a constant — importing the installed package must not
+# reach for a fixture file.
+SIGNAL_HEADER: tuple[str, ...] = (
+    'time', 'extero.food', 'extero.in_shelter',
+    'extero.shelter_known', 'extero.threat', 'extero.water',
+    'intero.cardiac_arousal', 'intero.circadian', 'intero.energy_deficit',
+    'intero.pain', 'intero.sleep_pressure', 'intero.thermal',
+    'intero.water_deficit', 'motor.drinking', 'motor.eating',
+    'motor.exertion', 'motor.sleeping', 'neuro.dopamine',
+    'neuro.norepinephrine', 'neuro.relief', 'neuro.serotonin',
+    'psyche.action.p_drink', 'psyche.action.p_eat', 'psyche.action.p_explore',
+    'psyche.action.p_flee', 'psyche.action.p_idle', 'psyche.action.p_seek_shelter',
+    'psyche.action.p_seek_water', 'psyche.action.p_sleep', 'psyche.action.selected_drink',
+    'psyche.action.selected_eat', 'psyche.action.selected_explore', 'psyche.action.selected_flee',
+    'psyche.action.selected_idle', 'psyche.action.selected_seek_shelter', 'psyche.action.selected_seek_water',
+    'psyche.action.selected_sleep', 'psyche.affect.arousal', 'psyche.affect.valence',
+    'psyche.anticipation.hunger', 'psyche.anticipation.threat', 'psyche.appraisal.threat',
+    'psyche.attention.focus_share', 'psyche.attention.share_hunger', 'psyche.attention.share_pain',
+    'psyche.attention.share_sleepiness', 'psyche.attention.share_thermal', 'psyche.attention.share_thirst',
+    'psyche.attention.share_threat', 'psyche.conditioning.defense_a', 'psyche.conditioning.defense_b',
+    'psyche.conditioning.reward_prediction', 'psyche.conditioning.threat_expectation', 'psyche.drive.hunger',
+    'psyche.drive.sleepiness', 'psyche.drive.thermal_discomfort', 'psyche.drive.thirst',
+    'psyche.habituation.novelty', 'psyche.instrumental.value_drink', 'psyche.instrumental.value_eat',
+    'psyche.instrumental.value_explore', 'psyche.instrumental.value_flee', 'psyche.instrumental.value_idle',
+    'psyche.instrumental.value_seek_shelter', 'psyche.instrumental.value_seek_water', 'psyche.instrumental.value_sleep',
+    'psyche.memory.episodes', 'psyche.memory.mood_congruence', 'soma.cardio.heart_rate',
+    'soma.circadian.clock_hour', 'soma.circadian.drive', 'soma.endocrine.adrenaline',
+    'soma.endocrine.cortisol', 'soma.fluid.hydration', 'soma.fluid.osmolality',
+    'soma.metabolism.energy_reserve', 'soma.metabolism.glucose', 'soma.metabolism.insulin',
+    'soma.nociception.burning', 'soma.nociception.injury', 'soma.nociception.pain',
+    'soma.nociception.sharp', 'soma.respiration.minute_ventilation', 'soma.respiration.rate',
+    'soma.respiration.spo2', 'soma.sleep.pressure', 'soma.thermo.core_temperature',
+    'soma.thermo.shivering', 'soma.thermo.sweating', 'world.ambient_temperature',
+    'world.damage', 'world.food_available', 'world.food_intake',
+    'world.in_shelter', 'world.shelter_known', 'world.stimulus',
+    'world.stimulus_b', 'world.threat', 'world.water_available',
+    'world.water_intake',
+)
+
 
 def _contract() -> TableContract:
-    """Build the contract from the pinned fixture's header — the input set is
-    registry-pinned, so the header is stable. Channels carry no range limits
-    in v1: several are signed (circadian, valence) and the physiological
-    envelopes are not yet documented; types and availability are the v1
-    contract."""
-    fixture = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "unbodysoma_run" / "signals.csv"
-    with fixture.open(encoding="utf-8") as handle:
-        header = next(csv.reader(handle))
     columns = tuple(
         ColumnSpec(
             name,
             "int" if name == "time" else "float",
             availability_lag_days=0.0,  # endogenous: knowable with the row itself
         )
-        for name in header
+        for name in SIGNAL_HEADER
     )
     return TableContract(name="signals", grain="signal", key=("time",), columns=columns)
 

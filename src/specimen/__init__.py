@@ -29,7 +29,7 @@ from .manifest import (
 )
 from .recipes import REGISTRY, RecipeSpec
 
-__version__ = "0.2.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "REGISTRY",

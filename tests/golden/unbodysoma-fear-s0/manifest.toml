@@ -6,7 +6,7 @@ seed = 0
 [recipe]
 module = "specimen.recipes.unbodysoma_signals"
 steps = ["parse_meta", "parse_signals_csv", "time_seconds", "drop_incomplete", "run_identity", "sort_by_time"]
-source_sha256 = "75ecec958fe8292e395da70524141a97d72bc214a4179f3cc5aebeb286f9e6d0"
+source_sha256 = "34fa60fe98aa6d0f1a964ea0db9c50e40e24526d41a44d95cb2db72cadf180ef"
 
 [[recipe.inputs]]
 path = "signals.csv"
