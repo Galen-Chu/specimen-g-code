@@ -29,7 +29,7 @@ def test_catalog_lists_entries(tmp_path: Path) -> None:
 
 
 def test_version_is_exported() -> None:
-    assert __version__ == "0.2.0"
+    assert __version__ == "0.5.0"
 
 
 def test_verify_missing_raw_file_fails_cleanly(tmp_path: Path) -> None:
