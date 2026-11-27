@@ -100,7 +100,7 @@ pr_auc = 0.0
 |---|---|---|---|
 | acquisition | 外部資料 | `data/raw/`＋hash | 原料只進不改；hash 即身分 |
 | preparation | 原料 | 乾淨的粒度分表 | 格式統一、去重有語意（合併規則宣告，不是隱含）；粒度混拌在此終結 |
-| staining | 分表 | 特徵表 | 衍生欄位全部是登記的宣告式步驟（欄位算術 DSL）；禁止匿名 lambda |
+| staining | 分表 | 特徵表 | 衍生欄位全部是登記的宣告式步驟（`staining.py` 步驟庫，Phase 3 落地；欄位算術 DSL 語法仍後議）；禁止匿名 lambda |
 | catalog | 表＋契約 | 封存標本 | schema 驗證通過才可封存；manifest 完備性檢查 |
 | assay | 標本 | 評估紀錄 | 四不變量閘門→時間切分訓練→基準比較表→結果回寫 |
 
@@ -149,7 +149,12 @@ sanctuary 的職掌）。schema 作為章節名保留在契約層，未來若需
 1. **表格式**：CSV（零相依）起手，何時引入 parquet（`[etl]` extra）？判準：
    欄數超過多少或型別保真需求出現時。
 2. **staining DSL 的宣告式程度**：欄位算術登記到什麼粒度（表達力 vs 可審查性）？
-   先從「具名步驟＋參數」開始，DSL 語法 Phase 3 再議。
+   **v1 已定案（2026-11-27，Phase 3 落地）**：`staining.py` 步驟庫——註冊制具名步驟
+   ＋參數（`asof_join`／`diff`／`ratio`／`pct_change`），manifest 以 `step_call`
+   正準字串記錄呼叫（可審計、可回查），組合仍是食譜內的 Python；DSL 語法繼續後議。
+   as-of join 是 I3 營運面的兌現：季→日以 lag ≥ 90 天（揭露窗口下限）執行，
+   未達可得日的列**丟棄而非填充**——case study 的 `fillna(0)` 失敗模式從此有
+   程式級的反義。
 3. **assay 登記深度**：模型係數／超參數／指標要存多少才叫可重現？最低要求：
    超參數＋種子＋評估指標＋切分版本。**已落實**（2026-11-18）：`[[assays]]` 紀錄
    含 protocol／model／seed／切分身分（train_end／valid_end）／hyperparams／metrics，

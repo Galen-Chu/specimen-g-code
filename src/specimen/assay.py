@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import csv
 import io
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, NoReturn
@@ -169,12 +169,17 @@ def run_assay(
     features: Sequence[str],
     seed: int = 0,
     protocol: str = PROTOCOL,
+    selector: str | None = None,
+    selector_params: Mapping[str, float] | None = None,
 ) -> list[AssayRecord]:
     """Run a registered protocol on a sealed specimen; returns the appended records.
 
     Domain-independent gates first (protocol lookup, table lookup, I2
     purity, I3 grain separation, output-hash integrity), then the protocol
-    runs behind its own checks. The manifest on disk gains one
+    runs behind its own checks. With ``selector`` set, the registered
+    selection fits on the **train segment only** (I1) and the models see the
+    narrowed feature list; the record names the selector, its params and the
+    exact features the models saw. The manifest on disk gains one
     ``[[assays]]`` record per model, appended — never overwritten.
     """
     runner = PROTOCOLS.get(protocol)
@@ -200,17 +205,48 @@ def run_assay(
     if sha256_bytes((directory / output.file).read_bytes()) != output.sha256:
         _refuse([f"{output.file} hash mismatch - the specimen is not intact; run verify"])
 
+    table_text = (directory / output.file).read_text(encoding="utf-8")
+    resolved_features = tuple(features)
+    recorded_selector_params: tuple[tuple[str, float], ...] = ()
+    if selector is not None:
+        from .selectors import run_selector  # deferred: the [ml] blade, like the protocol itself
+
+        non_numeric = [f for f in features if (c := contract.column(f)) is not None and c.type not in NUMERIC_TYPES]
+        if non_numeric:
+            _refuse([f"selection needs numeric features (float/int), got {non_numeric}"])
+        assignment = read_split(table_text, _date_column(contract), manifest.splits)
+        rows = list(csv.DictReader(io.StringIO(table_text)))
+        x_train = [[float(rows[i][f]) for f in features] for i in assignment.train]
+        y_train = [int(rows[i][target]) for i in assignment.train]
+        if not y_train or len(set(y_train)) < 2:
+            _refuse(["train segment has a single class - nothing to select on"])
+        params = dict(selector_params or {})
+        selection = run_selector(selector, x_train, y_train, tuple(features), seed, params)
+        if not selection.features:
+            _refuse([f"selector {selector!r} kept no features - nothing to train on"])
+        resolved_features = selection.features
+        recorded_selector_params = tuple(sorted((k, float(v)) for k, v in params.items()))
+
     records = runner(
         AssayContext(
             directory=directory,
             manifest=manifest,
             contract=contract,
-            table_text=(directory / output.file).read_text(encoding="utf-8"),
+            table_text=table_text,
             target=target,
-            features=tuple(features),
+            features=resolved_features,
             seed=seed,
         )
     )
+    records = [
+        replace(
+            record,
+            features=resolved_features,
+            selector=selector,
+            selector_params=recorded_selector_params,
+        )
+        for record in records
+    ]
     appended = replace(manifest, assays=manifest.assays + tuple(records))
     write_manifest(appended, directory / "manifest.toml")
     return records

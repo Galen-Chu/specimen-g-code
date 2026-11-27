@@ -78,7 +78,10 @@ class AssayRecord:
 
     Records the protocol, model, its declared hyperparameters, the seed and
     the splits the run used (DESIGN section 2, open question 3's minimum:
-    hyperparams + seed + metrics + split identity).
+    hyperparams + seed + metrics + split identity). Phase 3 adds run
+    provenance for feature selection: the exact feature list the models saw,
+    the selector that narrowed it (if any) and its params — a run whose
+    features cannot be named is not attestable.
     """
 
     protocol: str
@@ -88,6 +91,9 @@ class AssayRecord:
     valid_end: str
     hyperparams: tuple[tuple[str, float], ...] = ()
     metrics: tuple[tuple[str, float], ...] = ()
+    features: tuple[str, ...] = ()
+    selector: str | None = None
+    selector_params: tuple[tuple[str, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -182,6 +188,13 @@ def render_manifest(m: Manifest) -> str:
             f"train_end = {_q(record.train_end)}",
             f"valid_end = {_q(record.valid_end)}",
         ]
+        if record.features:
+            lines.append("features = [" + ", ".join(_q(f) for f in record.features) + "]")
+        if record.selector is not None:
+            lines.append(f"selector = {_q(record.selector)}")
+        if record.selector_params:
+            lines.append("[assays.selector_params]")
+            lines += [f"{key} = {value!r}" for key, value in record.selector_params]
         if record.hyperparams:
             lines.append("[assays.hyperparams]")
             lines += [f"{key} = {value!r}" for key, value in record.hyperparams]
@@ -282,6 +295,9 @@ def parse_manifest(text: str) -> Manifest:
             valid_end=a["valid_end"],
             hyperparams=tuple(sorted(a.get("hyperparams", {}).items())),
             metrics=tuple(sorted(a.get("metrics", {}).items())),
+            features=tuple(a.get("features", [])),
+            selector=a.get("selector"),
+            selector_params=tuple(sorted(a.get("selector_params", {}).items())),
         )
         for a in data.get("assays", [])
     )

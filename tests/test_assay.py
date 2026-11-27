@@ -162,3 +162,31 @@ def test_assay_on_the_first_real_specimen(tmp_path: Path) -> None:
     assert all(0.0 <= value <= 1.0 for r in records for _, value in r.metrics)
     ok, report = verify(directory)
     assert ok, report
+
+
+def test_assay_with_selector_records_features_and_params(tmp_path: Path) -> None:
+    """Phase 3: selection fits on train only; the record names selector, params, features."""
+    directory = build_specimen(tmp_path / "s")
+    records = run_assay(
+        directory,
+        "daily",
+        "label",
+        ("close", "volume"),
+        seed=7,
+        selector="mutual-information-top-k",
+        selector_params={"k": 1.0},
+    )
+    assert len(records) == 4
+    assert all(r.selector == "mutual-information-top-k" for r in records)
+    assert all(r.selector_params == (("k", 1.0),) for r in records)
+    assert all(r.features == ("close",) for r in records)  # MI keeps the informative one
+    on_disk = parse_manifest((directory / "manifest.toml").read_text(encoding="utf-8"))
+    assert on_disk.assays == tuple(records)
+    ok, report = verify(directory)
+    assert ok, report
+
+
+def test_assay_selector_refuses_unknown_name(tmp_path: Path) -> None:
+    directory = build_specimen(tmp_path / "s")
+    with pytest.raises(ValueError, match="unknown selector"):
+        run_assay(directory, "daily", "label", FEATURES, seed=7, selector="astrology")

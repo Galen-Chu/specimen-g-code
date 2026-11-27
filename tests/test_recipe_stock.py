@@ -26,7 +26,7 @@ def test_stock_1101_golden_is_byte_identical(tmp_path: Path) -> None:
     """The committed golden specimen pins the whole chain: raw months + quarterly raw, recipe, seal."""
     directory = tmp_path / "s"
     prepare("stock_1101", 0, RAW, directory)
-    for filename in ("manifest.toml", "daily.csv", "quarterly.csv"):
+    for filename in ("manifest.toml", "daily.csv", "quarterly.csv", "daily_enriched.csv"):
         assert (directory / filename).read_bytes() == (GOLDEN / filename).read_bytes(), filename
 
 
@@ -57,8 +57,47 @@ def test_registry_declares_what_the_manifest_records() -> None:
     spec = REGISTRY["stock_1101"]
     assert spec.module == "specimen.recipes.stock_1101"
     assert len(spec.inputs) == 36  # 34 monthly + 2 quarterly statement files
-    assert spec.steps[-3:] == ("parse_quarterly_statements", "harmonize_to_twd_thousands", "sort_quarterly_by_key")
+    assert spec.steps[:3] == ("parse_months", "normalize_roc_dates", "strip_thousands")
     assert len(spec.source_sha256) == 64
+
+
+def test_staining_steps_are_recorded_and_registered() -> None:
+    """The Phase 3 staining invocations land in the manifest steps, canonical form."""
+    spec = REGISTRY["stock_1101"]
+    assert spec.steps[-3:] == (
+        "asof_join(columns=revenue,net_income,total_assets, lag_days=90, source=quarterly)",
+        "ratio(denominator=revenue, name=net_margin, numerator=net_income)",
+        "ratio(denominator=total_assets, name=asset_turnover, numerator=revenue)",
+    )
+
+
+def test_daily_enriched_carries_quarterly_features_as_of() -> None:
+    """The stained table: 90-day disclosure lag, rows before availability dropped."""
+    text = (GOLDEN / "daily_enriched.csv").read_text(encoding="utf-8")
+    rows = list(csv.DictReader(io.StringIO(text)))
+    assert rows, "the enriched table must have content"
+    dates = [row["date"] for row in rows]
+    assert dates == sorted(dates)
+    # First row: the 2025Q3 report becomes public 2025-09-30 + 90 days.
+    assert dates[0] == "2025-12-29"
+    assert rows[0]["revenue"] == "39066903"  # 2025Q3 revenue, TWD thousands
+    assert rows[0]["net_income"] == "-10200124"
+    # Every row before that date must be absent (I3: dropped, never filled).
+    assert all(d >= "2025-12-29" for d in dates)
+    # The 2025Q4 report takes over from 2025-12-31 + 90 days.
+    late = next(row for row in rows if row["date"] >= "2026-03-31")
+    assert late["revenue"] != rows[0]["revenue"], "the newer report must replace the as-of value"
+    assert float(late["net_margin"]) != 0.0
+
+
+def test_daily_enriched_contract_passes_at_the_assay_door() -> None:
+    """I2: every non-key column of the stained table declares its availability."""
+    from specimen.invariants import check_target_purity
+
+    manifest = parse_manifest((GOLDEN / "manifest.toml").read_text(encoding="utf-8"))
+    contract = manifest.contract_of["daily_enriched"]
+    features = [c.name for c in contract.columns if c.name not in contract.key and c.name != "label"]
+    assert check_target_purity(contract, "label", features) == []
 
 
 def test_quarterly_table_harmonizes_and_drops_uncovered_quarters() -> None:

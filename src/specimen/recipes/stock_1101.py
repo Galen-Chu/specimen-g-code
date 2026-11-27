@@ -31,9 +31,18 @@ recorded in the manifest steps - none is implicit:
 - sort_quarterly_by_key: quarterly rows sorted by (date, symbol), where
   date is the quarter-end day.
 
-The as-of join of quarterly features into the daily grain (lag >= 90
-days) is a staining step - Phase 3 opens with exactly that registered
-step. Splits (time-ordered, registered in the manifest): train through
+Staining (Phase 3, the registered step library's first real use): the
+quarterly statement columns join onto the daily grain as-of, respecting
+availability - a quarterly value is usable only from quarter-end + 90 days
+(the disclosure window), rows before the first availability are dropped,
+never filled. Two declared ratio steps derive net_margin and
+asset_turnover. The result is the third output, ``daily_enriched`` (daily
+grain; its contract declares every availability lag). Because the
+quarterly history starts 2025Q3, the enriched table begins ~2025-12-29 and
+its train segment is thin by design - it thickens as raw months accumulate
+(new specimen version per the immutability contract).
+
+Splits (time-ordered, registered in the manifest): train through
 2025-12-31 (both classes present: the 2025H2 advance supplies positives),
 valid 2026-01-01..2026-06-30, test 2026-07-01 onward - the most recent
 fully-labelable window, which also carries both classes. The seed is
@@ -51,8 +60,9 @@ from collections.abc import Mapping
 from datetime import date, timedelta
 
 from ..manifest import ColumnSpec, Splits, TableContract
+from ..staining import asof_join, ratio, step_call
 
-STEPS = (
+PREPARATION_STEPS = (
     "parse_months",
     "normalize_roc_dates",
     "strip_thousands",
@@ -64,6 +74,13 @@ STEPS = (
     "harmonize_to_twd_thousands",
     "sort_quarterly_by_key",
 )
+# Staining records: the declared invocations, canonical form from step_call.
+STAINING_STEPS = (
+    step_call("asof_join", columns=("revenue", "net_income", "total_assets"), lag_days=90.0, source="quarterly"),
+    step_call("ratio", denominator="revenue", name="net_margin", numerator="net_income"),
+    step_call("ratio", denominator="total_assets", name="asset_turnover", numerator="revenue"),
+)
+STEPS = PREPARATION_STEPS + STAINING_STEPS
 MONTHLY_INPUTS = tuple(
     f"twse_stock_day_{year}{month:02d}.json"
     for year in range(2024, 2027)
@@ -102,6 +119,32 @@ CONTRACTS = (
             ColumnSpec("revenue", "float", lo=0.0, availability_lag_days=90.0),
             ColumnSpec("net_income", "float", availability_lag_days=90.0),  # can be negative; yf attribution
             ColumnSpec("total_assets", "float", lo=0.0, availability_lag_days=90.0),
+        ),
+    ),
+    # Stained table: daily grain, quarterly statements joined as-of (90-day
+    # disclosure lag) plus the two declared ratios. Availability of the
+    # derived columns equals the latest input's lag (90) - they are knowable
+    # the moment their inputs are.
+    TableContract(
+        name="daily_enriched",
+        grain="daily",
+        key=("date", "symbol"),
+        columns=(
+            ColumnSpec("date", "date"),
+            ColumnSpec("symbol", "string"),
+            ColumnSpec("open", "float", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("high", "float", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("low", "float", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("close", "float", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("volume", "int", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("value", "int", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("transactions", "int", lo=0.0, availability_lag_days=0.0),
+            ColumnSpec("label", "int", lo=0.0, hi=1.0, availability_lag_days=90.0),
+            ColumnSpec("revenue", "float", lo=0.0, availability_lag_days=90.0),
+            ColumnSpec("net_income", "float", availability_lag_days=90.0),
+            ColumnSpec("total_assets", "float", lo=0.0, availability_lag_days=90.0),
+            ColumnSpec("net_margin", "float", availability_lag_days=90.0),
+            ColumnSpec("asset_turnover", "float", lo=0.0, availability_lag_days=90.0),
         ),
     ),
 )
@@ -200,9 +243,26 @@ def run(seed: int, inputs: Mapping[str, bytes]) -> dict[str, str]:
         label = 1 if future / close - 1.0 >= THRESHOLD else 0
         labeled.append({**row, "label": str(label)})
 
+    daily_text = _write_csv(HEADER, labeled)
+    quarterly_text = _write_csv(QUARTERLY_HEADER, _quarterly_rows(inputs))
+
+    # Staining (Phase 3): the registered as-of step carries the quarterly
+    # statements onto the daily grain at the 90-day disclosure lag, then two
+    # declared ratios derive fundamentals-relative features. Dropped rows
+    # (no report public yet) are the step's declared behaviour, not a fill.
+    enriched = asof_join(
+        quarterly_text,
+        daily_text,
+        columns=("revenue", "net_income", "total_assets"),
+        lag_days=90.0,
+    )
+    enriched = ratio(enriched, numerator="net_income", denominator="revenue", name="net_margin")
+    enriched = ratio(enriched, numerator="revenue", denominator="total_assets", name="asset_turnover")
+
     return {
-        "daily": _write_csv(HEADER, labeled),
-        "quarterly": _write_csv(QUARTERLY_HEADER, _quarterly_rows(inputs)),
+        "daily": daily_text,
+        "quarterly": quarterly_text,
+        "daily_enriched": enriched,
     }
 
 
