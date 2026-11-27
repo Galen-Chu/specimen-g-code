@@ -31,7 +31,6 @@ import csv
 import io
 import json
 from collections.abc import Mapping
-from pathlib import Path
 
 from ..manifest import ColumnSpec, Splits, TableContract
 
