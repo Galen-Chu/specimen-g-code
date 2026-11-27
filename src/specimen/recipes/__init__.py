@@ -42,7 +42,12 @@ class RecipeSpec:
     run: RecipeFn
 
 
-from . import demo_vitals, sanctuary_worlds, stock_1101, unbodysoma_signals  # noqa: E402 - registry assembled after the spec type
+from . import (  # noqa: E402 - registry assembled after the spec type
+    demo_vitals,
+    sanctuary_worlds,
+    stock_1101,
+    unbodysoma_signals,
+)
 
 REGISTRY: dict[str, RecipeSpec] = {
     "demo_vitals": RecipeSpec(
