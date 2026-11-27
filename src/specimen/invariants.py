@@ -25,6 +25,7 @@ import io
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from .contract import parse_date
 from .manifest import Manifest, Splits, TableContract, grain_problems
@@ -48,6 +49,8 @@ class SplitAssignment:
 
 
 def _boundaries(splits: Splits) -> tuple[date, date]:
+    if splits.method == "seed-ordered":
+        raise ValueError(f"seed-ordered splits (ADR-0001) split on the seed column, not dates: {splits!r}")
     train_end = parse_date(splits.train_end)
     valid_end = parse_date(splits.valid_end)
     if train_end is None or valid_end is None or train_end >= valid_end:
@@ -55,29 +58,64 @@ def _boundaries(splits: Splits) -> tuple[date, date]:
     return train_end, valid_end
 
 
+def _seed_boundaries(splits: Splits) -> tuple[int, int]:
+    if splits.method != "seed-ordered":
+        raise ValueError(f"time-ordered splits split on dates, not seeds: {splits!r}")
+    try:
+        train_end, valid_end = int(splits.train_end), int(splits.valid_end)
+    except ValueError:
+        raise ValueError(
+            f"seed-ordered boundaries must be integer seeds with train_end < valid_end, got {splits!r}"
+        ) from None
+    if train_end >= valid_end:
+        raise ValueError(f"seed-ordered boundaries must be integers with train_end < valid_end, got {splits!r}")
+    return train_end, valid_end
+
+
+def split_column(contract: TableContract, method: str) -> str:
+    """The key column a split reads: the date key for time-ordered; for
+    seed-ordered (ADR-0001) the int key named ``seed`` — else the first int
+    key. Refuses when the contract lacks a usable one."""
+    wanted = "int" if method == "seed-ordered" else "date"
+    candidates = [column.name for column in contract.columns if column.name in contract.key and column.type == wanted]
+    if not candidates:
+        raise ValueError(f"contract {contract.name!r}: no key column of type {wanted!r} to split on")
+    if method == "seed-ordered" and "seed" in candidates:
+        return "seed"
+    return candidates[0]
+
+
 def read_split(table_text: str, date_column: str, splits: Splits) -> SplitAssignment:
     """Assign every data row of a CSV table to a segment by the sealed boundaries.
 
-    train: date <= train_end; valid: train_end < date <= valid_end;
-    test: date > valid_end. Raises on malformed dates, a missing date
-    column or invalid boundaries — the reader refuses ambiguous input
-    rather than guessing.
+    ``date_column`` is the column the split reads — the date key for
+    ``time-ordered`` splits, the seed key for ``seed-ordered`` (ADR-0001).
+    train: value <= train_end; valid: train_end < value <= valid_end;
+    test: value > valid_end. Raises on malformed values, a missing column
+    or invalid boundaries — the reader refuses ambiguous input rather than
+    guessing.
     """
-    train_end, valid_end = _boundaries(splits)
+    train_end: Any
+    valid_end: Any
+    if splits.method == "seed-ordered":
+        train_end, valid_end = _seed_boundaries(splits)
+    else:
+        train_end, valid_end = _boundaries(splits)
     reader = csv.DictReader(io.StringIO(table_text))
     if date_column not in (reader.fieldnames or []):
-        raise ValueError(f"date column {date_column!r} is not in the table header")
-    dates: list[str] = []
+        raise ValueError(f"split column {date_column!r} is not in the table header")
+    values: list[str] = []
     labels: list[str] = []
     for row_number, row in enumerate(reader, start=2):
         value = row[date_column] or ""
-        parsed = parse_date(value)
-        if parsed is None:
-            raise ValueError(f"row {row_number}: {value!r} is not a valid YYYY-MM-DD date")
-        dates.append(value)
-        labels.append("train" if parsed <= train_end else "valid" if parsed <= valid_end else "test")
+        try:
+            parsed = _parse_split_value(splits, value)
+        except ValueError as error:
+            raise ValueError(f"row {row_number}: {error}") from None
+        values.append(value)
+        labels.append(_classify(parsed, train_end, valid_end))
     return SplitAssignment(
-        dates=tuple(dates),
+        dates=tuple(values),
         labels=tuple(labels),
         train=tuple(i for i, label in enumerate(labels) if label == "train"),
         valid=tuple(i for i, label in enumerate(labels) if label == "valid"),
@@ -85,33 +123,67 @@ def read_split(table_text: str, date_column: str, splits: Splits) -> SplitAssign
     )
 
 
-def check_time_safety(assignment: SplitAssignment, splits: Splits) -> list[str]:
-    """I1 gate: a labeling must respect the sealed boundaries in time order.
+def _parse_int(value: str) -> int | None:
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
-    Every train row <= train_end, every valid row in (train_end,
-    valid_end], every test row after valid_end. An assignment produced by
-    ``read_split`` passes trivially; the gate exists for labelings that
-    came from anywhere else. Empty list = pass.
+
+def _parse_split_value(splits: Splits, value: str) -> Any:
+    """Parse one split value per the method: an int seed for seed-ordered
+    (ADR-0001), an ISO date for time-ordered. Raises on malformed values."""
+    if splits.method == "seed-ordered":
+        number = _parse_int(value)
+        if number is None:
+            raise ValueError(f"{value!r} is not a valid integer seed")
+        return number
+    parsed = parse_date(value)
+    if parsed is None:
+        raise ValueError(f"{value!r} is not a valid YYYY-MM-DD date")
+    return parsed
+
+
+def _classify(parsed: Any, train_end: Any, valid_end: Any) -> str:
+    """The same intervals for both methods — the parsed value's type carries
+    the ordering, so one ladder serves dates and seeds alike."""
+    return "train" if parsed <= train_end else "valid" if parsed <= valid_end else "test"
+
+
+def check_time_safety(assignment: SplitAssignment, splits: Splits) -> list[str]:
+    """I1 gate: a labeling must respect the sealed boundaries in declared order.
+
+    For ``time-ordered`` every train row <= train_end (dates); for
+    ``seed-ordered`` (ADR-0001) the same intervals over the seed column.
+    An assignment produced by ``read_split`` passes trivially; the gate
+    exists for labelings that came from anywhere else. Empty list = pass.
     """
     problems: list[str] = []
+    train_end: Any
+    valid_end: Any
     try:
-        train_end, valid_end = _boundaries(splits)
+        if splits.method == "seed-ordered":
+            train_end, valid_end = _seed_boundaries(splits)
+        else:
+            train_end, valid_end = _boundaries(splits)
     except ValueError as error:
         return [f"splits: {error}"]
     for row_number, (label, value) in enumerate(zip(assignment.labels, assignment.dates, strict=True), start=2):
-        parsed = parse_date(value)
-        if parsed is None:
-            problems.append(f"row {row_number}: {value!r} is not a valid date")
+        try:
+            parsed = _parse_split_value(splits, value)
+        except ValueError:
+            problems.append(f"row {row_number}: {value!r} is not a valid split value")
+            continue
+        if label not in SEGMENTS:
+            problems.append(f"row {row_number}: unknown segment {label!r}")
         elif label == "train" and parsed > train_end:
-            problems.append(f"row {row_number}: train row dated {value} is after train_end {splits.train_end}")
+            problems.append(f"row {row_number}: train row at {value} is after train_end {splits.train_end}")
         elif label == "valid" and not train_end < parsed <= valid_end:
             problems.append(
-                f"row {row_number}: valid row dated {value} is outside ({splits.train_end}, {splits.valid_end}]"
+                f"row {row_number}: valid row at {value} is outside ({splits.train_end}, {splits.valid_end}]"
             )
         elif label == "test" and parsed <= valid_end:
-            problems.append(f"row {row_number}: test row dated {value} is not after valid_end {splits.valid_end}")
-        elif label not in SEGMENTS:
-            problems.append(f"row {row_number}: unknown segment {label!r}")
+            problems.append(f"row {row_number}: test row at {value} is not after valid_end {splits.valid_end}")
     return problems
 
 

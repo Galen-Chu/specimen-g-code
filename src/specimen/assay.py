@@ -28,7 +28,7 @@ from typing import Any, NoReturn
 from .catalog import load
 from .contract import validate_table
 from .hashing import sha256_bytes
-from .invariants import check_grain_separation, check_target_purity, check_time_safety, read_split
+from .invariants import check_grain_separation, check_target_purity, check_time_safety, read_split, split_column
 from .manifest import AssayRecord, Manifest, TableContract, write_manifest
 
 PROTOCOL = "time-split-baseline"
@@ -98,14 +98,6 @@ def _refuse(problems: Sequence[str]) -> NoReturn:
     raise ValueError("; ".join(problems))
 
 
-def _date_column(contract: TableContract) -> str:
-    for key in contract.key:
-        column = contract.column(key)
-        if column is not None and column.type == "date":
-            return key
-    _refuse([f"contract {contract.name!r}: no key column of type 'date' to split on"])
-
-
 def _time_split_baseline(ctx: AssayContext) -> list[AssayRecord]:
     """Fit the baselines on the train segment, score on test, against the sealed split."""
     conformance = validate_table(ctx.contract, ctx.table_text)
@@ -116,7 +108,7 @@ def _time_split_baseline(ctx: AssayContext) -> list[AssayRecord]:
     if non_numeric:
         _refuse([f"features must be numeric (float/int), got {non_numeric}"])
 
-    assignment = read_split(ctx.table_text, _date_column(ctx.contract), ctx.manifest.splits)
+    assignment = read_split(ctx.table_text, split_column(ctx.contract, ctx.manifest.splits.method), ctx.manifest.splits)
     safety = check_time_safety(assignment, ctx.manifest.splits)
     if safety:
         _refuse(safety)
@@ -214,7 +206,7 @@ def run_assay(
         non_numeric = [f for f in features if (c := contract.column(f)) is not None and c.type not in NUMERIC_TYPES]
         if non_numeric:
             _refuse([f"selection needs numeric features (float/int), got {non_numeric}"])
-        assignment = read_split(table_text, _date_column(contract), manifest.splits)
+        assignment = read_split(table_text, split_column(contract, manifest.splits.method), manifest.splits)
         rows = list(csv.DictReader(io.StringIO(table_text)))
         x_train = [[float(rows[i][f]) for f in features] for i in assignment.train]
         y_train = [int(rows[i][target]) for i in assignment.train]

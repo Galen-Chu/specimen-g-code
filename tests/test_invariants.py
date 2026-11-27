@@ -15,7 +15,7 @@ from specimen import (
     parse_manifest,
     read_split,
 )
-from specimen.manifest import ColumnSpec, TableContract
+from specimen.manifest import ColumnSpec, Splits, TableContract
 from specimen.recipes.demo_vitals import CONTRACTS, SPLITS
 
 GOLDEN = Path(__file__).parent / "golden" / "demo-vitals-s7"
@@ -45,10 +45,20 @@ def test_read_split_on_the_golden_specimen() -> None:
 def test_read_split_refuses_ambiguous_input() -> None:
     with pytest.raises(ValueError, match="not a valid"):
         read_split("date,x\n2026-02-31,a\n", "date", SPLITS)  # impossible calendar date
-    with pytest.raises(ValueError, match="date column"):
+    with pytest.raises(ValueError, match="not in the table header"):
         read_split("when,x\n2026-01-02,a\n", "date", SPLITS)
     with pytest.raises(ValueError, match="train_end"):
         read_split(TABLE, "date", replace(SPLITS, train_end="2026-01-20"))
+
+
+def test_seed_ordered_splits_read_the_seed_column() -> None:
+    """ADR-0001: seed-ordered splits read the int 'seed' key with the same intervals."""
+    splits = Splits(method="seed-ordered", train_end="100", valid_end="101")
+    text = "seed,x\n99,a\n100,b\n101,c\n102,d\n"
+    assignment = read_split(text, "seed", splits)
+    assert assignment.train == (0, 1) and assignment.valid == (2,) and assignment.test == (3,)
+    with pytest.raises(ValueError, match="not a valid integer seed"):
+        read_split("seed,x\nx1,a\n", "seed", splits)
 
 
 def test_time_safety_catches_a_rogue_labeling() -> None:
@@ -62,7 +72,7 @@ def test_time_safety_catches_a_rogue_labeling() -> None:
         test=(),
     )
     problems = check_time_safety(rogue, SPLITS)
-    assert any("train row dated 2026-01-11" in p for p in problems)
+    assert any("train row at 2026-01-11" in p for p in problems)
     assert any("unknown segment 'holdout'" in p for p in problems)
 
 

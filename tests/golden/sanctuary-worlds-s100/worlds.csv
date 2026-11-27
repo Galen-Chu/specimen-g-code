@@ -1,0 +1,4 @@
+population_seed,seed,world_name,preset,generator_version,duration_h,width,height,start_x,start_y,food_count,water_count,shelter_count,hazard_count
+100,100,meadow_s100,meadow@1,0.2.0,72,20,20,12.126472,6.314952,5,2,1,3
+100,101,meadow_s101,meadow@1,0.2.0,72,20,20,13.734018,7.297134,5,2,1,3
+100,102,meadow_s102,meadow@1,0.2.0,72,20,20,13.618057,5.604881,5,2,1,3

@@ -122,6 +122,13 @@ def _q(value: str) -> str:
     return f'"{escaped}"'
 
 
+def _int_or_none(value: str) -> int | None:
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 def render_manifest(m: Manifest) -> str:
     """Serialize deterministically to TOML text (LF, fixed field order)."""
     lines: list[str] = []
@@ -218,8 +225,18 @@ def validate_manifest(m: Manifest) -> list[str]:
         problems.append("recipe: at least one input with sha256 is required")
     if any(len(i.sha256) != 64 for i in m.inputs):
         problems.append("recipe: input sha256 must be 64 hex characters")
-    if m.splits.method != "time-ordered":
-        problems.append(f"splits: unsupported method {m.splits.method!r} (Phase 1: 'time-ordered')")
+    if m.splits.method not in ("time-ordered", "seed-ordered"):
+        problems.append(f"splits: unsupported method {m.splits.method!r} ('time-ordered' or 'seed-ordered', ADR-0001)")
+    if m.splits.method == "seed-ordered":
+        train_seed = _int_or_none(m.splits.train_end)
+        valid_seed = _int_or_none(m.splits.valid_end)
+        if train_seed is None or valid_seed is None:
+            problems.append(
+                f"splits: seed-ordered boundaries must be integer seeds, "
+                f"got {m.splits.train_end!r}/{m.splits.valid_end!r}"
+            )
+        elif train_seed >= valid_seed:
+            problems.append("splits: seed-ordered needs train_end < valid_end")
     output_names = {o.name for o in m.outputs}
     contract_names = {c.name for c in m.contracts}
     if output_names != contract_names:

@@ -73,7 +73,7 @@ cd specimen-g-code && pip install -e ".[dev]"   # 核心零相依；dev = pytest
 PYTHONPATH=src python -m specimen prepare demo_vitals --seed 7 --raw tests/fixtures --out specimens/demo-vitals-s7
 PYTHONPATH=src python -m specimen verify  specimens/demo-vitals-s7 --raw tests/fixtures   # I4 逐位元驗證
 PYTHONPATH=src python -m specimen catalog specimens
-python -m pytest                                    # 90 tests, 含兩個 golden 標本逐位元比對（assay/selection 測試需 [ml]，未裝則略過）
+python -m pytest                                    # 97 tests, 含兩個 golden 標本逐位元比對（assay/selection 測試需 [ml]，未裝則略過）
 ```
 
 （Windows PowerShell：`$env:PYTHONPATH="src"`。`specimen prepare` 封存的標本是自描述的——manifest＋契約即可解讀，不需要本專案的程式碼。）
@@ -85,7 +85,7 @@ python -m pytest                                    # 90 tests, 含兩個 golden
 | `specimen/manifest.py` | 標本登錄：inputs／recipe（含原始碼 hash）／outputs／contracts／splits；決定論 TOML 序列化＋結構驗證 | ✅ |
 | `specimen/contract.py` | 表契約：型別、範圍、鍵唯一性（schema 章節） | ✅ |
 | `specimen/catalog.py` | prepare（封存）／verify（完整性＋契約＋I4 重現）／catalog（清單） | ✅ |
-| `specimen/recipes/` | 食譜註冊表（`REGISTRY`）＋`demo_vitals`（髒資料→雙粒度表的機械證明）——領域食譜包的登記處 | ✅ |
+| `specimen/recipes/` | 食譜註冊表（`REGISTRY`）＋`demo_vitals`（髒資料→雙粒度表的機械證明）＋`sanctuary_worlds`（**第二領域**：世界群→無時間軸標本，Phase 4a）——領域食譜包的登記處 | ✅ |
 | `specimen/__main__.py` | CLI：prepare／verify／catalog／assay | ✅ |
 | `specimen/staining.py` | 染色步驟庫（Phase 3）：`asof_join`（I3 營運面——季→日 as-of，lag ≥ 90、丟棄不填充）＋欄位算術（`diff`／`ratio`／`pct_change`）；註冊制具名步驟，`step_call` 正準紀錄入 manifest | ✅ |
 | `specimen/selectors.py` | 特徵選取協議（Phase 3，`SELECTORS` 登記制）：correlation-filter／MI top-k／RFE top-k——一律 fit-on-train（I1） | ✅ |
@@ -109,7 +109,8 @@ python -m pytest                                    # 90 tests, 含兩個 golden
 - [x] **Phase 1（2026-11-16）**：manifest＋contract＋catalog 核心與 golden 重現（零相依；CSV 表）；demo_vitals 食譜證明全鏈；CLI＋CI
 - [x] **Phase 2（2026-11-16～18）**：manifest 釘住食譜原始碼 hash（v0.2.0——verify 具名識破程式碼漂移）；四不變量閘門與切分讀取器（`invariants.py`）；assay 協議（`PROTOCOLS` 登記制、標準化基準比較表、`[[assays]]` 只加不寫）；通用作業流程定案（SOP.md）；第一號真實標本 `stock_1101` 雙粒度落地——daily（TWSE 開放資料重爬、宣告式清潔規則、90 天前瞻目標）＋quarterly（官方 MOPS 快照作血緣與向前累積；歷史季 2025Q3–2026Q3 以 yfinance 宣告式回補，重疊季交叉驗證精確命中）
 - [x] **Phase 3（2026-11-27 完成，v0.3.0）**：**staining 步驟庫**（`staining.py`：`asof_join`／`diff`／`ratio`／`pct_change` 註冊制具名步驟＋`step_call` 正準紀錄；as-of join 是 I3 營運面的兌現——季→日 lag ≥ 90 天、未達可得日丟棄不填充）＋**特徵選取協議登記化**（`selectors.py`：correlation-filter／MI top-k／RFE top-k，一律 fit-on-train＝I1；`[[assays]]` 紀錄帶 selector／params／features）；`stock_1101` 落地第三張表 **daily_enriched**（季報 as-of 進日頻＋兩個宣告比率，契約全宣告 availability）
-- [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群（SOP 通用化的第一次實戰考驗）
+- [x] **Phase 4a（2026-11-27 完成，v0.4.0）**：**生態適配器——sanctuary 世界群**（第二領域 `sanctuary_worlds`：`population.toml`＋N 份世界 TOML → `worlds` 表，grain `world`；**第一個無時間軸標本**——seed-ordered 切分（[ADR-0001](docs/adr/ADR-0001-atemporal-specimens.md)：seed-ordered 切分法＋split_column 分派；I1/I3 依 SOP 退化為種子序）、count/seed 交叉檢查、golden 釘死。**Unbodysoma `signals.csv` 適配器 deferred**——待其 repo/fixture 可得時依同一 SOP 落地。assay 對世界群暫緩（無學習問題不強造 target，ADR-0001 consequences）
+- [ ] **Phase 4b/5**：Unbodysoma `signals.csv` 適配器（待 fixture）；漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）
 - [ ] **Phase 4**：生態適配器——Unbodysoma `signals.csv`、sanctuary 世界群（SOP 通用化的第一次實戰考驗）
 - [ ] **Phase 5**：漂移偵測與標本升級（v1→v2 diff；schema 章節是否獨立為模組的評估點）
 

@@ -1,0 +1,92 @@
+[specimen]
+name = "sanctuary-worlds-s0"
+version = 1
+seed = 0
+
+[recipe]
+module = "specimen.recipes.sanctuary_worlds"
+steps = ["parse_population", "parse_worlds", "seed_crosscheck", "count_crosscheck", "sort_by_seed"]
+source_sha256 = "ca3e6f06d62e568cce1763ddbd6e7edab6aede3bb10f3af170d9b849d77d0bce"
+
+[[recipe.inputs]]
+path = "population.toml"
+sha256 = "9270e83c751786bc25ca21e807ca79595c1e7aace68d05555b5141e51f955b2d"
+
+[[recipe.inputs]]
+path = "meadow_s100.toml"
+sha256 = "2be4b341f0f09d436d89a2bf1ffe304ca3d396d51c41ebbe0985d3a11535f794"
+
+[[recipe.inputs]]
+path = "meadow_s101.toml"
+sha256 = "496308b405ec64a7326d885523eb21e836daa7a482362d5a7fa545da9b760ebf"
+
+[[recipe.inputs]]
+path = "meadow_s102.toml"
+sha256 = "a5ed919ef6b6e5934f280ac1d780e89f230a6995dbc717e552cad0c0bed11f94"
+
+[splits]
+method = "seed-ordered"
+train_end = "100"
+valid_end = "101"
+
+[[outputs]]
+name = "worlds"
+grain = "world"
+file = "worlds.csv"
+sha256 = "176dfe5731116f64b427d2883209306a4823047bf8da6a1121820fb6f4d77a44"
+rows = 3
+
+[contracts.worlds]
+grain = "world"
+key = ["population_seed", "seed"]
+[contracts.worlds.columns.duration_h]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.food_count]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.generator_version]
+type = "string"
+availability_lag_days = 0.0
+[contracts.worlds.columns.hazard_count]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.height]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.population_seed]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.preset]
+type = "string"
+availability_lag_days = 0.0
+[contracts.worlds.columns.seed]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.shelter_count]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.start_x]
+type = "float"
+availability_lag_days = 0.0
+[contracts.worlds.columns.start_y]
+type = "float"
+availability_lag_days = 0.0
+[contracts.worlds.columns.water_count]
+type = "int"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.width]
+type = "float"
+lo = 0.0
+availability_lag_days = 0.0
+[contracts.worlds.columns.world_name]
+type = "string"
+availability_lag_days = 0.0

@@ -1,0 +1,28 @@
+# Sanctuary population manifest — the group provenance of one --count run.
+# Reproduce: sanctuary --seed 100 --preset meadow --count 3 --out <this directory>
+
+[population]
+generator = "sanctuary-g-code"
+version = "0.2.0"
+preset = "meadow@1"
+seed = 100
+count = 3
+duration_h = 72
+
+[[worlds]]
+name = "meadow_s100"
+file = "meadow_s100.toml"
+seed = 100
+sha256 = "2be4b341f0f09d436d89a2bf1ffe304ca3d396d51c41ebbe0985d3a11535f794"
+
+[[worlds]]
+name = "meadow_s101"
+file = "meadow_s101.toml"
+seed = 101
+sha256 = "496308b405ec64a7326d885523eb21e836daa7a482362d5a7fa545da9b760ebf"
+
+[[worlds]]
+name = "meadow_s102"
+file = "meadow_s102.toml"
+seed = 102
+sha256 = "a5ed919ef6b6e5934f280ac1d780e89f230a6995dbc717e552cad0c0bed11f94"

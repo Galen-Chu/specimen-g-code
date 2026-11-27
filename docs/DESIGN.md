@@ -131,7 +131,7 @@ pr_auc = 0.0
 
 | 方向 | 介面 |
 |---|---|
-| 吃 sanctuary | 世界群（N 顆種子的 world TOML／統計量）→ 世界標本 |
+| 吃 sanctuary | 世界群（N 顆種子的 world TOML／統計量）→ 世界標本——**已落地（Phase 4a，2026-11-27）**：`recipes/sanctuary_worlds`，第一個無時間軸標本；seed-ordered 切分見 [ADR-0001](adr/ADR-0001-atemporal-specimens.md) |
 | 吃 Unbodysoma | `runs/*/signals.csv`、`events.jsonl` → 行為標本（Phase 3 學習心智的訓練語料） |
 | 吐 Health-Inbody | M6 預測模型以 assay 協議訓練與比較 |
 | 吐 任何專案 | 標本是自描述的：manifest＋契約即可解讀，不需要本專案的程式碼 |
@@ -163,5 +163,7 @@ sanctuary 的職掌）。schema 作為章節名保留在契約層，未來若需
    （傾向：是——manifest 已有 version 欄。）
 5. **schema 章節獨立化**：`contract.py` 是否在成熟後獨立成模組（保留
    schema-g-code 名）？判準：出現契約層的非標本消費者時。
-6. **ADR 文化**：本專案是否採用 Unbodysoma 式 ADR？Phase 1 第一個難以反悔
-   的決定出現時決定。
+6. **ADR 文化**：本專案是否採用 Unbodysoma 式 ADR？→ **採用（2026-11-27）**：
+   Phase 4a 的無時間軸切分是第一個難以反悔的決定（Splits.method 語意擴充），
+   [ADR-0001](adr/ADR-0001-atemporal-specimens.md) 即第一號——SOP 判斷規則 2
+   的機制自此生效：動 manifest 格式或四不變量定義，先 ADR 再動工。
